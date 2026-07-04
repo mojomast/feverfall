@@ -45,6 +45,8 @@ Completed:
 - [F] Option C feel-test scene model added aim adjustment, deterministic shot simulation, first-bounce data, replay hash, HUD/debug summaries, and smoke tests.
 - [E] Option C feedback wiring maps feel-test shot results to existing `FeedbackEvent` cue summaries with accessibility reductions.
 - [F] Visible shot fix added deterministic trajectory sampling to render a cyan trail and yellow final ball marker when Space fires.
+- [A] Tuning iteration 2 added implicit left/right board wall collisions and reduced default restitution/bounce energy.
+- [F] Tuning iteration 2 added animated shot playback so the yellow ball moves over time and the cyan trail reveals progressively.
 
 Authored board IDs:
 - `boards/feel_fan_01`
@@ -73,6 +75,8 @@ Validation completed:
 Automated feel validation:
 - First-bounce prediction exactness is covered by `physics_core::tests::first_bounce_prediction_matches_simulated_circle_peg_collision`.
 - No-tunneling/stability is covered by `physics_core::tests::no_tunneling_at_max_speed_against_thin_segment` and `physics_core::tests::stress_10000_randomish_shots_do_not_stick_or_loop_forever`.
+- Wall containment is covered by `physics_core::tests::board_walls_keep_sampled_trajectory_inside_horizontal_bounds_at_speed_cap`.
+- Reduced-bounce wall behavior is covered by `physics_core::tests::board_wall_rebound_is_stable_and_damped`.
 - Bucket catch opportunity is covered by `board_gen::tests::authored_board_bucket_catch_skillfulness_diagnostic_pre_human_feel_scene`; 8 of 10 authored boards met the automated catchability threshold.
 - After tuning iteration 1, all 10 authored boards meet the automated 2+ catchable trajectory threshold.
 
@@ -89,7 +93,7 @@ Tuning iteration 1 catch counts:
 - `boards/feel_wave_gate_01`: 2
 
 Last replay hash:
-- `598ff57ca69b031c4e487fdd54d07d7c7f2667d20f66ad1be85351ae58ae0630`
+- `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`
 
 Remaining before Checkpoint 1 exit:
 - Human feel validation approval from the playable scene, or two additional tuning iterations with specific feedback before proceeding to Checkpoint 2.
@@ -97,7 +101,7 @@ Remaining before Checkpoint 1 exit:
 
 Playable feel-test command:
 - `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`
-- Controls: Left/Right or A/D adjusts aim; Space fires a deterministic shot and draws a cyan shot trail plus yellow final ball marker.
+- Controls: Left/Right or A/D adjusts aim; Space fires a deterministic shot, animates a yellow ball, and reveals a cyan shot trail progressively.
 
 Decision needed from human:
 - Run the playable feel-test scene and approve Physics Feel Alpha for Checkpoint 2, or request tuning iteration 2 with a specific target: too floaty, too chaotic, catch too forgiving, catch too strict, or first bounce unreadable.

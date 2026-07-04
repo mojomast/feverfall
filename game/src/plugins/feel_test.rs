@@ -1,6 +1,8 @@
 use board_gen::{authored_boards_dir, load_authored_boards, BoardLoadError};
 use content_schema::{BallId, BoardDefinition, Scalar, Score};
-use physics_core::{simulate_shot, ShotInput, ShotResult};
+use physics_core::{
+    sample_shot_trajectory, simulate_shot, ShotInput, ShotResult, TrajectorySample,
+};
 
 use crate::plugins::{
     debug::DebugOverlayState,
@@ -12,6 +14,110 @@ pub const FEEL_TEST_SEED: u64 = 0xFEE1_FA11;
 const DEFAULT_LAUNCH_SPEED: Scalar = 17.5;
 const DEFAULT_BALLS: u32 = 9;
 const AIM_STEP_RADIANS: Scalar = 2.5_f64.to_radians();
+const TRAJECTORY_SAMPLE_EVERY_TICKS: u64 = 6;
+const PLAYBACK_TICKS_PER_SECOND: Scalar = 480.0;
+const SMOKE_PLAYBACK_DELTA_SECONDS: Scalar = 1.0 / 30.0;
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TrajectoryPlaybackCursor {
+    samples: Vec<TrajectorySample>,
+    ticks_per_second: Scalar,
+    elapsed_ticks: Scalar,
+    visible_sample_count: usize,
+    complete: bool,
+}
+
+impl TrajectoryPlaybackCursor {
+    pub fn new(samples: Vec<TrajectorySample>, ticks_per_second: Scalar) -> Self {
+        let complete = samples.len() <= 1;
+        Self {
+            samples,
+            ticks_per_second: ticks_per_second.max(1.0),
+            elapsed_ticks: 0.0,
+            visible_sample_count: 1,
+            complete,
+        }
+    }
+
+    pub fn advance(&mut self, delta_seconds: Scalar) -> bool {
+        if self.complete || self.samples.is_empty() {
+            return false;
+        }
+
+        self.elapsed_ticks += delta_seconds.max(0.0) * self.ticks_per_second;
+        let last_tick = self.samples.last().map(|sample| sample.tick).unwrap_or(0) as Scalar;
+        if self.elapsed_ticks >= last_tick {
+            self.elapsed_ticks = last_tick;
+            self.visible_sample_count = self.samples.len();
+            self.complete = true;
+            return true;
+        }
+
+        while self.visible_sample_count < self.samples.len()
+            && self.samples[self.visible_sample_count].tick as Scalar <= self.elapsed_ticks
+        {
+            self.visible_sample_count += 1;
+        }
+
+        true
+    }
+
+    pub fn current_position(&self) -> Option<content_schema::Vec2> {
+        let first = self.samples.first()?;
+        if self.samples.len() == 1 || self.complete {
+            return self.samples.last().map(|sample| sample.position);
+        }
+
+        let next_index = self
+            .samples
+            .iter()
+            .position(|sample| sample.tick as Scalar >= self.elapsed_ticks)
+            .unwrap_or(self.samples.len() - 1);
+        if next_index == 0 {
+            return Some(first.position);
+        }
+
+        let previous = self.samples[next_index - 1];
+        let next = self.samples[next_index];
+        let tick_span = (next.tick - previous.tick).max(1) as Scalar;
+        let t = ((self.elapsed_ticks - previous.tick as Scalar) / tick_span).clamp(0.0, 1.0);
+
+        Some(content_schema::Vec2::new(
+            previous.position.x + (next.position.x - previous.position.x) * t,
+            previous.position.y + (next.position.y - previous.position.y) * t,
+        ))
+    }
+
+    pub fn trail_points(&self) -> Vec<content_schema::Vec2> {
+        let mut points: Vec<_> = self
+            .samples
+            .iter()
+            .take(self.visible_sample_count.min(self.samples.len()))
+            .map(|sample| sample.position)
+            .collect();
+
+        if !self.complete {
+            if let Some(position) = self.current_position() {
+                if points.last().is_none_or(|last| *last != position) {
+                    points.push(position);
+                }
+            }
+        }
+
+        points
+    }
+
+    pub const fn is_complete(&self) -> bool {
+        self.complete
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TrajectoryPlaybackSnapshot {
+    pub trail_point_count: usize,
+    pub current_position: Option<content_schema::Vec2>,
+    pub complete: bool,
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FeelTestScene {
@@ -22,6 +128,7 @@ pub struct FeelTestScene {
     pub shot_count: u32,
     pub mock_score: Score,
     pub last_result: Option<ShotResult>,
+    pub playback_snapshot: Option<TrajectoryPlaybackSnapshot>,
     pub hud: FeelTestHudState,
     pub debug: DebugOverlayState,
     pub render: FeelTestRenderState,
@@ -53,6 +160,7 @@ impl FeelTestScene {
             shot_count: 0,
             mock_score: 0,
             last_result: None,
+            playback_snapshot: None,
             hud,
             debug,
             render,
@@ -79,6 +187,7 @@ impl FeelTestScene {
             self.balls_remaining += 1;
             self.mock_score += 2_500;
         }
+        self.playback_snapshot = Some(build_playback_snapshot(&self.board, &self.input));
         self.last_result = Some(result);
         self.refresh_views();
     }
@@ -90,7 +199,7 @@ impl FeelTestScene {
             .map(|result| result.summary.replay_hash.as_str())
             .unwrap_or("<none>");
         format!(
-            "feel-test board={} aim_deg={:.2} first_bounce={} shots={} balls={} score={} replay_hash={} {}",
+            "feel-test board={} aim_deg={:.2} first_bounce={} shots={} balls={} score={} replay_hash={} {} {}",
             self.board.id,
             self.input.aim_angle_radians.to_degrees(),
             self.hud.aim.first_bounce.is_some(),
@@ -98,8 +207,25 @@ impl FeelTestScene {
             self.balls_remaining,
             self.mock_score,
             replay_hash,
-            self.debug.event_log_summary.display_line()
+            self.debug.event_log_summary.display_line(),
+            self.playback_snapshot_line()
         )
+    }
+
+    fn playback_snapshot_line(&self) -> String {
+        self.playback_snapshot
+            .as_ref()
+            .map(|snapshot| {
+                format!(
+                    "playback_points={} playback_position={} playback_complete={}",
+                    snapshot.trail_point_count,
+                    snapshot.current_position.is_some(),
+                    snapshot.complete
+                )
+            })
+            .unwrap_or_else(|| {
+                "playback_points=0 playback_position=false playback_complete=false".to_owned()
+            })
     }
 
     fn refresh_views(&mut self) {
@@ -192,6 +318,21 @@ fn clamp_feel_test_angle(angle: Scalar) -> Scalar {
     angle.clamp(18.0_f64.to_radians(), 162.0_f64.to_radians())
 }
 
+fn build_playback_snapshot(
+    board: &BoardDefinition,
+    input: &ShotInput,
+) -> TrajectoryPlaybackSnapshot {
+    let samples = sample_shot_trajectory(board, input, TRAJECTORY_SAMPLE_EVERY_TICKS);
+    let mut cursor = TrajectoryPlaybackCursor::new(samples, PLAYBACK_TICKS_PER_SECOND);
+    cursor.advance(SMOKE_PLAYBACK_DELTA_SECONDS);
+
+    TrajectoryPlaybackSnapshot {
+        trail_point_count: cursor.trail_points().len(),
+        current_position: cursor.current_position(),
+        complete: cursor.is_complete(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,6 +382,76 @@ mod tests {
         assert_eq!(
             scene_a.debug.event_log_summary,
             scene_b.debug.event_log_summary
+        );
+    }
+
+    #[test]
+    fn trajectory_playback_cursor_reveals_trail_progressively() {
+        let samples = vec![
+            TrajectorySample {
+                tick: 0,
+                position: content_schema::Vec2::new(0.0, 0.0),
+            },
+            TrajectorySample {
+                tick: 10,
+                position: content_schema::Vec2::new(10.0, 0.0),
+            },
+            TrajectorySample {
+                tick: 20,
+                position: content_schema::Vec2::new(20.0, 0.0),
+            },
+        ];
+        let mut cursor = TrajectoryPlaybackCursor::new(samples, 10.0);
+
+        assert_eq!(
+            cursor.trail_points(),
+            vec![content_schema::Vec2::new(0.0, 0.0)]
+        );
+        assert!(!cursor.is_complete());
+
+        cursor.advance(0.5);
+
+        assert_eq!(
+            cursor.current_position(),
+            Some(content_schema::Vec2::new(5.0, 0.0))
+        );
+        assert_eq!(
+            cursor.trail_points(),
+            vec![
+                content_schema::Vec2::new(0.0, 0.0),
+                content_schema::Vec2::new(5.0, 0.0)
+            ]
+        );
+        assert!(!cursor.is_complete());
+    }
+
+    #[test]
+    fn trajectory_playback_cursor_completes_on_final_sample() {
+        let samples = vec![
+            TrajectorySample {
+                tick: 0,
+                position: content_schema::Vec2::new(0.0, 0.0),
+            },
+            TrajectorySample {
+                tick: 4,
+                position: content_schema::Vec2::new(1.0, 1.0),
+            },
+        ];
+        let mut cursor = TrajectoryPlaybackCursor::new(samples, 4.0);
+
+        cursor.advance(1.0);
+
+        assert!(cursor.is_complete());
+        assert_eq!(
+            cursor.current_position(),
+            Some(content_schema::Vec2::new(1.0, 1.0))
+        );
+        assert_eq!(
+            cursor.trail_points(),
+            vec![
+                content_schema::Vec2::new(0.0, 0.0),
+                content_schema::Vec2::new(1.0, 1.0)
+            ]
         );
     }
 }

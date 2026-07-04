@@ -36,7 +36,7 @@ impl Default for SimConfig {
             timestep_seconds: 1.0 / 120.0,
             gravity: Vec2::new(0.0, 22.0),
             air_damping_per_tick: 0.9985,
-            tangential_damping_on_collision: 0.995,
+            tangential_damping_on_collision: 0.99,
             min_active_speed: 0.25,
             max_speed_cap: 38.0,
             restitution: RestitutionTable::default(),
@@ -57,11 +57,11 @@ pub struct RestitutionTable {
 impl Default for RestitutionTable {
     fn default() -> Self {
         Self {
-            peg: 0.94,
-            wall: 0.91,
-            bucket_rim: 1.02,
-            stone_obstacle: 0.78,
-            rubber_obstacle: 1.08,
+            peg: 0.90,
+            wall: 0.84,
+            bucket_rim: 0.98,
+            stone_obstacle: 0.72,
+            rubber_obstacle: 1.02,
         }
     }
 }
@@ -129,6 +129,7 @@ enum ColliderKind<'a> {
     Peg(&'a PegDef),
     Obstacle(&'a ObstacleDef),
     BucketRim,
+    BoardWall,
 }
 
 #[derive(Clone, Debug)]
@@ -402,6 +403,9 @@ fn integrate_tick(
                     config,
                 );
             }
+            ColliderKind::BoardWall => {
+                ball.velocity = reflect(ball.velocity, hit.normal, config.restitution.wall, config);
+            }
         }
 
         remaining *= 1.0 - hit.t.clamp(0.0, 1.0);
@@ -443,6 +447,8 @@ fn earliest_hit<'a>(
     end: Vec2,
 ) -> Option<Hit<'a>> {
     let mut best: Option<Hit<'a>> = None;
+
+    best = choose_earlier(best, sweep_circle_vs_board_walls(board, start, end));
 
     for peg in &board.pegs {
         for (a, b, radius) in shape_colliders(&peg.shape) {
@@ -491,6 +497,39 @@ fn earliest_hit<'a>(
     }
 
     best
+}
+
+fn sweep_circle_vs_board_walls<'a>(
+    board: &BoardDefinition,
+    start: Vec2,
+    end: Vec2,
+) -> Option<Hit<'a>> {
+    let travel = sub(end, start);
+    if travel.x.abs() <= Scalar::EPSILON || board.size.x <= BALL_RADIUS * 2.0 {
+        return None;
+    }
+
+    let (boundary, wall_x, normal) = if travel.x < 0.0 {
+        (BALL_RADIUS, 0.0, vec2(1.0, 0.0))
+    } else {
+        (board.size.x - BALL_RADIUS, board.size.x, vec2(-1.0, 0.0))
+    };
+    let t = (boundary - start.x) / travel.x;
+    if !(0.0..=1.0).contains(&t) {
+        return None;
+    }
+
+    let center_at_hit = add(start, mul(travel, t));
+    if !is_finite_vec(center_at_hit) {
+        return None;
+    }
+
+    Some(Hit {
+        t,
+        normal,
+        position: vec2(wall_x, center_at_hit.y),
+        kind: ColliderKind::BoardWall,
+    })
 }
 
 fn choose_earlier<'a>(current: Option<Hit<'a>>, next: Option<Hit<'a>>) -> Option<Hit<'a>> {
@@ -884,8 +923,13 @@ mod tests {
 
         assert_eq!(config.timestep_seconds, 1.0 / 120.0);
         assert_eq!(config.gravity, Vec2::new(0.0, 22.0));
+        assert_eq!(config.tangential_damping_on_collision, 0.99);
         assert_eq!(config.max_speed_cap, 38.0);
-        assert_eq!(config.restitution.peg, 0.94);
+        assert_eq!(config.restitution.peg, 0.90);
+        assert_eq!(config.restitution.wall, 0.84);
+        assert_eq!(config.restitution.bucket_rim, 0.98);
+        assert_eq!(config.restitution.stone_obstacle, 0.72);
+        assert_eq!(config.restitution.rubber_obstacle, 1.02);
     }
 
     #[test]
@@ -1041,6 +1085,61 @@ mod tests {
             .events
             .iter()
             .any(|event| matches!(event, PhysicsEvent::BallHitObstacle { .. })));
+    }
+
+    #[test]
+    fn board_walls_keep_sampled_trajectory_inside_horizontal_bounds_at_speed_cap() {
+        let board = empty_board();
+        let input = ShotInput {
+            aim_angle_radians: 0.05,
+            launch_speed: SimConfig::default().max_speed_cap,
+            ball_id: ball_id(),
+        };
+
+        let samples = sample_shot_trajectory(&board, &input, 1);
+
+        assert!(samples.iter().all(|sample| {
+            sample.position.x >= BALL_RADIUS - CONTACT_SLOP
+                && sample.position.x <= board.size.x - BALL_RADIUS + CONTACT_SLOP
+        }));
+    }
+
+    #[test]
+    fn board_wall_rebound_is_stable_and_damped() {
+        let board = empty_board();
+        let config = SimConfig {
+            gravity: Vec2::ZERO,
+            air_damping_per_tick: 1.0,
+            ..SimConfig::default()
+        };
+        let input = ShotInput {
+            aim_angle_radians: 0.0,
+            launch_speed: config.max_speed_cap,
+            ball_id: ball_id(),
+        };
+        let mut ball = BallState {
+            position: Vec2::new(board.size.x - BALL_RADIUS - 0.01, 10.0),
+            velocity: Vec2::new(config.max_speed_cap, 0.0),
+        };
+        let pre_speed = length(ball.velocity);
+        let mut events = Vec::new();
+        let mut hit_pegs = Vec::new();
+
+        integrate_tick(
+            &board,
+            &input,
+            &config,
+            1,
+            &mut ball,
+            &mut events,
+            &mut hit_pegs,
+        );
+
+        assert!(ball.position.x <= board.size.x - BALL_RADIUS + CONTACT_SLOP);
+        assert!(ball.velocity.x < 0.0);
+        assert!(length(ball.velocity) < pre_speed * 0.86);
+        assert!(is_finite_vec(ball.position));
+        assert!(is_finite_vec(ball.velocity));
     }
 
     #[test]

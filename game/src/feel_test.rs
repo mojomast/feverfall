@@ -7,11 +7,14 @@ use physics_core::{
     ShotSummary,
 };
 
+use crate::plugins::feel_test::TrajectoryPlaybackCursor;
+
 const BOARD_JSON: &str = include_str!("../assets/content/boards/feel_fan_01.json");
 const BOARD_SCALE: f32 = 22.0;
 const LAUNCH_SPEED: f64 = 24.0;
 const SHOT_SEED: u64 = 1;
 const TRAJECTORY_SAMPLE_EVERY_TICKS: u64 = 6;
+const PLAYBACK_TICKS_PER_SECOND: f64 = 480.0;
 
 pub fn run() {
     let board: BoardDefinition =
@@ -29,7 +32,10 @@ pub fn run() {
             ..default()
         }))
         .add_systems(Startup, setup_scene)
-        .add_systems(Update, (handle_input, refresh_dynamic_overlay).chain())
+        .add_systems(
+            Update,
+            (handle_input, advance_shot_playback, refresh_dynamic_overlay).chain(),
+        )
         .run();
 }
 
@@ -43,6 +49,8 @@ struct FeelTestState {
     hit_peg_ids: Vec<String>,
     first_bounce: Option<PhysicsEvent>,
     trajectory_points: Vec<content_schema::Vec2>,
+    shot_ball_position: Option<content_schema::Vec2>,
+    playback: Option<TrajectoryPlaybackCursor>,
 }
 
 impl FeelTestState {
@@ -56,7 +64,13 @@ impl FeelTestState {
             hit_peg_ids: Vec::new(),
             first_bounce: None,
             trajectory_points: Vec::new(),
+            shot_ball_position: None,
+            playback: None,
         }
+    }
+
+    fn shot_results_visible(&self) -> bool {
+        self.last_summary.is_some() && self.playback.is_none()
     }
 }
 
@@ -78,6 +92,10 @@ fn handle_input(
     time: Res<Time>,
     mut state: ResMut<FeelTestState>,
 ) {
+    if state.playback.is_some() {
+        return;
+    }
+
     let previous_angle = state.aim_angle_radians;
     let turn_step = f64::from(time.delta_secs()) * 1.35;
 
@@ -97,11 +115,10 @@ fn handle_input(
         let input = current_shot_input(state.aim_angle_radians);
         let result = simulate_shot(SHOT_SEED, &state.board, &input);
         state.first_bounce = predict_first_bounce(&state.board, &input);
-        state.trajectory_points =
-            sample_shot_trajectory(&state.board, &input, TRAJECTORY_SAMPLE_EVERY_TICKS)
-                .into_iter()
-                .map(|sample| sample.position)
-                .collect();
+        let samples = sample_shot_trajectory(&state.board, &input, TRAJECTORY_SAMPLE_EVERY_TICKS);
+        let playback = TrajectoryPlaybackCursor::new(samples, PLAYBACK_TICKS_PER_SECOND);
+        state.trajectory_points = playback.trail_points();
+        state.shot_ball_position = playback.current_position();
         state.hit_peg_ids = result
             .summary
             .pegs_hit
@@ -109,8 +126,33 @@ fn handle_input(
             .map(|peg| peg.as_str().to_owned())
             .collect();
         state.last_summary = Some(result.summary);
+        if playback.is_complete() {
+            state.trajectory_points = playback.trail_points();
+            state.shot_ball_position = playback.current_position();
+            state.playback = None;
+        } else {
+            state.playback = Some(playback);
+        }
         state.revision += 1;
     }
+}
+
+fn advance_shot_playback(time: Res<Time>, mut state: ResMut<FeelTestState>) {
+    let Some(mut playback) = state.playback.take() else {
+        return;
+    };
+
+    if !playback.advance(f64::from(time.delta_secs())) {
+        state.playback = Some(playback);
+        return;
+    }
+
+    state.trajectory_points = playback.trail_points();
+    state.shot_ball_position = playback.current_position();
+    if !playback.is_complete() {
+        state.playback = Some(playback);
+    }
+    state.revision += 1;
 }
 
 fn refresh_dynamic_overlay(
@@ -136,8 +178,10 @@ fn refresh_dynamic_overlay(
         &mut materials,
     );
     spawn_shot_trajectory(&mut commands, &state, &mut meshes, &mut materials);
-    spawn_hit_markers(&mut commands, &state, &mut meshes, &mut materials);
-    spawn_result_panel(&mut commands, &state, &mut meshes, &mut materials);
+    if state.shot_results_visible() {
+        spawn_hit_markers(&mut commands, &state, &mut meshes, &mut materials);
+        spawn_result_panel(&mut commands, &state, &mut meshes, &mut materials);
+    }
     state.drawn_revision = state.revision;
 }
 
@@ -394,7 +438,7 @@ fn spawn_shot_trajectory(
         commands.entity(segment).insert(DynamicOverlay);
     }
 
-    if let Some(position) = state.trajectory_points.last() {
+    if let Some(position) = state.shot_ball_position {
         let ball = spawn_circle(
             commands,
             meshes,

@@ -27,6 +27,8 @@ Checkpoint 1: Physics Feel Alpha.
 - [G] Added a manually runnable native Windows GitHub Actions feel-test build workflow that uploads the `.exe` and SHA-256 checksum artifacts. Not yet run by this agent.
 - [G] Updated feature-built feel-test launch behavior so the native Windows artifact opens the playable scene on double-click/no args, with `--smoke` retained for non-interactive smoke mode.
 - [F] Fixed Bevy feel-test shot visibility: Space now renders a cyan deterministic trajectory trail and yellow final ball indicator instead of only instant hit markers.
+- [A] Tuning iteration 2 added deterministic left/right board wall collisions and reduced restitution/bounce energy.
+- [F] Tuning iteration 2 replaced static full-path display with animated shot playback: a yellow ball moves along the sampled trajectory and the cyan trail reveals progressively.
 
 ## Active Workstreams
 
@@ -52,6 +54,8 @@ Checkpoint 1: Physics Feel Alpha.
 - [F] UI / HUD Agent: Option C feel-test scene shell and HUD/debug models.
 - [E] Feedback / VFX / Audio Agent: Option C shot feedback wiring.
 - [F] UI / HUD Agent: visible ball/trajectory fix for playable feel-test scene.
+- [A] Physics Core & Feel Agent: tuning iteration 2 for wall bounds and reduced bounce.
+- [F] UI / HUD Agent: animated trajectory playback fix.
 
 ## Files Changed
 
@@ -105,7 +109,7 @@ Checkpoint 1: Physics Feel Alpha.
 ## Passing Validation
 
 - Formatting, strict clippy, workspace tests, replay runner, board validator, content linter, seed browser smoke, and game smoke all pass after A/B/G integration.
-- `cargo test --workspace` includes 13 `physics_core` tests, including first-bounce prediction matching simulation, no tunneling, no NaN, bucket catch, peg clear timing, and 10,000 random-ish stress shots.
+- `cargo test --workspace` includes 16 `physics_core` tests, including first-bounce prediction matching simulation, no tunneling, no NaN, bucket catch, peg clear timing, left/right board wall confinement, damped wall rebound, trajectory sampling determinism, and 10,000 random-ish stress shots.
 - `cargo run -p board_validator` passes all 10 authored boards.
 - `cargo run -p replay_runner` matches the golden replay hash.
 - `cargo run -p feverfall_game` prints plugin registration summary: `ui(first_bounce=true, balls=10, equipped_skills=1, power=75%), audio(cues=13, high_freq=5), vfx(events=10, cues=22, shake=3), debug(collisions=486, first_bounce=true, reused_aim=true)`.
@@ -113,6 +117,7 @@ Checkpoint 1: Physics Feel Alpha.
 - Default game smoke prints a deterministic feel-test summary and exits.
 - Feature-gated playable Bevy feel-test compiles and passes clippy with `bevy_feel_test` enabled.
 - Bevy feel-test shot visibility now includes a trajectory trail and final ball marker driven by deterministic physics trajectory sampling.
+- Bevy feel-test shot playback now animates the ball over time instead of drawing only the final static path.
 - Windows binary built successfully at `target/x86_64-pc-windows-gnu/release/feverfall_game.exe`.
 - Windows binary SHA-256: `dac381bb4cbd8c764a779cf9a9bac80cb2f26f505ac4f26e8428701f1ef5b652`.
 - Native GitHub Actions Windows artifact workflow is available but has not been run by this agent.
@@ -137,7 +142,7 @@ Checkpoint 1: Physics Feel Alpha.
 
 ## Last Replay Hash
 
-- `598ff57ca69b031c4e487fdd54d07d7c7f2667d20f66ad1be85351ae58ae0630`
+- `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`
 
 ## Next Integration Target
 
