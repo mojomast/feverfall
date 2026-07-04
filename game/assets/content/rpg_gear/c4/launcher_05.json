@@ -1,0 +1,11 @@
+{
+  "id": "gear/c4/launcher_05",
+  "slot": "Launcher",
+  "name": "Launcher 05",
+  "rarity": "Rare",
+  "level_requirement": 2,
+  "description": "C4 Launcher gear option for RPG chapters 2-5.",
+  "effects": [
+    "effects/gear/launcher_05"
+  ]
+}

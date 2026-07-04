@@ -1,0 +1,12 @@
+id = "balls/c4/storm_orb"
+name = "Storm Orb"
+family = "ball_families/elemental"
+rarity = "Rare"
+description = "C4 variant tuned for elemental ball routing and combo experiments."
+effects = ["effects/ball/storm_orb"]
+
+[stats]
+radius = 0.22
+mass = 1.05
+launch_speed_multiplier = 1.06
+restitution_multiplier = 1.04

@@ -1,0 +1,7 @@
+id = "relics/act2/green_battery"
+name = "Green Battery"
+category = "Peg"
+rarity = "Rare"
+act = 2
+description = "C4 Green Battery relic expands Peg run identity for later acts."
+effects = ["effects/peg/green_battery"]

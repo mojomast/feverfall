@@ -429,6 +429,41 @@ pub struct RunActPlan {
     pub bosses: u8,
 }
 
+pub const ACT4_REQUIRED_KEYS: u32 = 3;
+pub const FULL_FEVER_CLEARED_RECORD: &str = "Full Fever Cleared";
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Act4BoardSpec {
+    pub node: RunNode,
+    pub board_seed: Seed,
+    pub difficulty: u8,
+    pub curse_frequency: CurseFrequency,
+    pub meta_reward_rarity: RewardRarity,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CurseFrequency {
+    Standard,
+    High,
+    Extreme,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ScriptedBossMechanic {
+    pub id: ContentId,
+    pub primary: BossMechanicKind,
+    pub secondary: BossMechanicKind,
+    pub seed: Seed,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BossMechanicKind {
+    ScriptedObstacleRow,
+    BucketTempoShift,
+    CursePegSurge,
+    FeverLock,
+}
+
 pub fn full_run_act_plan() -> Vec<RunActPlan> {
     vec![
         RunActPlan {
@@ -450,6 +485,21 @@ pub fn full_run_act_plan() -> Vec<RunActPlan> {
             bosses: 1,
         },
     ]
+}
+
+pub fn act4_final_seed_plan() -> RunActPlan {
+    RunActPlan {
+        act: 4,
+        normal_boards: 4,
+        elites: 0,
+        bosses: 1,
+    }
+}
+
+pub fn full_run_with_act4_plan() -> Vec<RunActPlan> {
+    let mut plan = full_run_act_plan();
+    plan.push(act4_final_seed_plan());
+    plan
 }
 
 pub fn full_run_nodes() -> Vec<RunNode> {
@@ -504,6 +554,70 @@ pub fn full_run_nodes() -> Vec<RunNode> {
     nodes
 }
 
+pub fn act4_seed(run_seed: Seed) -> Seed {
+    splitmix64(run_seed ^ 0xa4f1_4f1a_15ee_d5ed)
+}
+
+pub fn act4_unlocked(state: &RunState) -> bool {
+    state.resources.keys >= ACT4_REQUIRED_KEYS
+}
+
+pub fn act4_final_seed_board_specs(run_seed: Seed) -> Vec<Act4BoardSpec> {
+    let base_seed = act4_seed(run_seed);
+    (1..=4)
+        .map(|index| {
+            let node = run_node(
+                4,
+                index,
+                RunNodeKind::Board,
+                Some(format!("generated/act4/final_seed_{index:02}")),
+            );
+            Act4BoardSpec {
+                node,
+                board_seed: splitmix64(base_seed.wrapping_add(u64::from(index))),
+                difficulty: 8 + index,
+                curse_frequency: if index < 4 {
+                    CurseFrequency::High
+                } else {
+                    CurseFrequency::Extreme
+                },
+                meta_reward_rarity: RewardRarity::Boss,
+            }
+        })
+        .chain(std::iter::once(Act4BoardSpec {
+            node: run_node(
+                4,
+                5,
+                RunNodeKind::Boss,
+                Some("generated/act4/final_boss".to_owned()),
+            ),
+            board_seed: splitmix64(base_seed ^ 0xf11a_1b05_5000_0001_u64),
+            difficulty: 13,
+            curse_frequency: CurseFrequency::Extreme,
+            meta_reward_rarity: RewardRarity::Boss,
+        }))
+        .collect()
+}
+
+pub fn act4_final_boss_mechanic(run_seed: Seed) -> ScriptedBossMechanic {
+    ScriptedBossMechanic {
+        id: ContentId::new("boss_mechanics/act4/final_seed_row_tempo").expect("static id is valid"),
+        primary: BossMechanicKind::ScriptedObstacleRow,
+        secondary: BossMechanicKind::BucketTempoShift,
+        seed: splitmix64(act4_seed(run_seed) ^ 0xb055_f1a1_5eed),
+    }
+}
+
+pub fn full_run_nodes_with_act4(run_seed: Seed) -> Vec<RunNode> {
+    let mut nodes = full_run_nodes();
+    nodes.extend(
+        act4_final_seed_board_specs(run_seed)
+            .into_iter()
+            .map(|spec| spec.node),
+    );
+    nodes
+}
+
 fn run_node(act: u8, index: u8, kind: RunNodeKind, board: Option<String>) -> RunNode {
     RunNode {
         id: ContentId::new(format!("runs/act{act}/node_{index:02}")).unwrap(),
@@ -522,6 +636,7 @@ pub struct MetaProgressionSave {
     pub unlocked_starter_balls: Vec<BallId>,
     pub unlocked_starting_relics: Vec<RelicId>,
     pub unlocked_board_archetype_weights: Vec<ContentId>,
+    pub mastery_records: Vec<String>,
 }
 
 impl Default for MetaProgressionSave {
@@ -533,6 +648,7 @@ impl Default for MetaProgressionSave {
             unlocked_starter_balls: vec![BallId::new("balls/act1/basic_orb").unwrap()],
             unlocked_starting_relics: Vec::new(),
             unlocked_board_archetype_weights: Vec::new(),
+            mastery_records: Vec::new(),
         }
     }
 }
@@ -555,6 +671,27 @@ impl MetaProgressionSave {
             MetaUnlock::BoardArchetypeWeight(ContentId::new("archetypes/act2/lanes_plus").unwrap()),
         ]
     }
+
+    pub fn act4_mastery_unlock_offer(&self) -> [MetaUnlock; 3] {
+        [
+            MetaUnlock::StarterBall(BallId::new("balls/act4/final_seed_orb").unwrap()),
+            MetaUnlock::StartingRelic(RelicId::new("relics/act4/fever_crown").unwrap()),
+            MetaUnlock::BoardArchetypeWeight(
+                ContentId::new("archetypes/act4/final_seed_weight").unwrap(),
+            ),
+        ]
+    }
+
+    pub fn record_full_fever_cleared(&mut self) {
+        if !self
+            .mastery_records
+            .iter()
+            .any(|record| record == FULL_FEVER_CLEARED_RECORD)
+        {
+            self.mastery_records
+                .push(FULL_FEVER_CLEARED_RECORD.to_owned());
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -562,6 +699,14 @@ pub enum MetaUnlock {
     StarterBall(BallId),
     StartingRelic(RelicId),
     BoardArchetypeWeight(ContentId),
+}
+
+fn splitmix64(mut value: u64) -> u64 {
+    value = value.wrapping_add(0x9e37_79b9_7f4a_7c15);
+    let mut z = value;
+    z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
+    z ^ (z >> 31)
 }
 
 pub fn act1_slice_nodes() -> Vec<RunNode> {
@@ -801,8 +946,9 @@ mod tests {
     }
 
     #[test]
-    fn full_run_plan_has_required_three_act_composition_and_branching() {
+    fn full_run_plan_has_required_act_composition_and_branching() {
         let nodes = full_run_nodes();
+        assert_eq!(full_run_act_plan().len(), 3);
 
         for plan in full_run_act_plan() {
             let act_nodes = nodes
@@ -836,6 +982,77 @@ mod tests {
             assert!(act_nodes.iter().any(|node| node.kind == RunNodeKind::Camp));
             assert!(act_nodes.iter().any(|node| node.path_choices.len() >= 2));
         }
+    }
+
+    #[test]
+    fn act4_final_seed_is_optional_and_requires_three_keys() {
+        let mut state = RunState::new(0xA4);
+
+        assert!(!act4_unlocked(&state));
+        state.resources.keys = ACT4_REQUIRED_KEYS;
+
+        assert!(act4_unlocked(&state));
+        assert_eq!(full_run_act_plan().len(), 3);
+        assert_eq!(full_run_with_act4_plan().last().unwrap().act, 4);
+        assert_eq!(full_run_with_act4_plan().last().unwrap().normal_boards, 4);
+        assert_eq!(full_run_with_act4_plan().last().unwrap().bosses, 1);
+    }
+
+    #[test]
+    fn act4_boards_are_seeded_from_run_seed_and_have_high_risk_rewards() {
+        let specs = act4_final_seed_board_specs(0xFEED_FA11);
+        let repeated = act4_final_seed_board_specs(0xFEED_FA11);
+        let other = act4_final_seed_board_specs(0xFEED_FA12);
+
+        assert_eq!(specs, repeated);
+        assert_ne!(specs, other);
+        assert_eq!(specs.len(), 5);
+        assert_eq!(
+            specs
+                .iter()
+                .filter(|spec| spec.node.kind == RunNodeKind::Board)
+                .count(),
+            4
+        );
+        assert_eq!(
+            specs
+                .iter()
+                .filter(|spec| spec.node.kind == RunNodeKind::Boss)
+                .count(),
+            1
+        );
+        assert!(specs.iter().all(|spec| matches!(
+            spec.curse_frequency,
+            CurseFrequency::High | CurseFrequency::Extreme
+        )));
+        assert!(specs
+            .iter()
+            .all(|spec| spec.meta_reward_rarity == RewardRarity::Boss));
+        assert_eq!(
+            full_run_nodes_with_act4(0xFEED_FA11)
+                .iter()
+                .filter(|node| node
+                    .board
+                    .as_ref()
+                    .is_some_and(|board| board.as_str().starts_with("generated/act4/")))
+                .count(),
+            5
+        );
+    }
+
+    #[test]
+    fn act4_final_boss_combines_two_scripted_mechanic_types() {
+        let mechanic = act4_final_boss_mechanic(0xFEED_FA11);
+
+        assert_eq!(
+            mechanic.id.as_str(),
+            "boss_mechanics/act4/final_seed_row_tempo"
+        );
+        assert_eq!(mechanic.primary, BossMechanicKind::ScriptedObstacleRow);
+        assert_eq!(mechanic.secondary, BossMechanicKind::BucketTempoShift);
+        assert_ne!(mechanic.primary, mechanic.secondary);
+        assert_eq!(mechanic, act4_final_boss_mechanic(0xFEED_FA11));
+        assert_ne!(mechanic.seed, act4_final_boss_mechanic(0xFEED_FA12).seed);
     }
 
     #[test]
@@ -936,6 +1153,20 @@ mod tests {
         assert_eq!(META_SAVE_PATH, "saves/roguelite/meta.json");
         assert_eq!(save.total_runs, 1);
         assert_eq!(save.total_oranges_cleared, 12);
+        assert!(matches!(offers[0], MetaUnlock::StarterBall(_)));
+        assert!(matches!(offers[1], MetaUnlock::StartingRelic(_)));
+        assert!(matches!(offers[2], MetaUnlock::BoardArchetypeWeight(_)));
+    }
+
+    #[test]
+    fn act4_win_records_full_fever_cleared_and_better_unlocks() {
+        let mut save = MetaProgressionSave::default();
+
+        save.record_full_fever_cleared();
+        save.record_full_fever_cleared();
+        let offers = save.act4_mastery_unlock_offer();
+
+        assert_eq!(save.mastery_records, vec![FULL_FEVER_CLEARED_RECORD]);
         assert!(matches!(offers[0], MetaUnlock::StarterBall(_)));
         assert!(matches!(offers[1], MetaUnlock::StartingRelic(_)));
         assert!(matches!(offers[2], MetaUnlock::BoardArchetypeWeight(_)));

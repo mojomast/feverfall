@@ -1,0 +1,7 @@
+id = "relics/act3/bucket_gyroscope"
+name = "Bucket Gyroscope"
+category = "Basket"
+rarity = "Uncommon"
+act = 3
+description = "C4 Bucket Gyroscope relic expands Basket run identity for later acts."
+effects = ["effects/basket/bucket_gyroscope"]

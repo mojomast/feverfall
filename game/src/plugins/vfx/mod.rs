@@ -1,3 +1,4 @@
+use content_schema::RelicCategory;
 use feedback_events::{AccessibilityFeedbackFlags, FeedbackEvent, FeedbackKind};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -9,7 +10,23 @@ pub struct VfxRegistrationSummary {
 
 pub fn register() -> VfxRegistrationSummary {
     let events = mock_checkpoint1_feedback_sequence();
-    let state = play_mock_checkpoint1_scene(AccessibilityFeedbackFlags::DEFAULT);
+    let mut state = play_mock_checkpoint1_scene(AccessibilityFeedbackFlags::DEFAULT);
+    let relic_event = FeedbackEvent {
+        kind: FeedbackKind::RelicTriggered,
+        intensity: 0.65,
+        position: content_schema::Vec2::ZERO,
+        combo: 0,
+        value: 1,
+    };
+    for category in [
+        RelicCategory::Ball,
+        RelicCategory::Peg,
+        RelicCategory::Basket,
+        RelicCategory::Board,
+        RelicCategory::EconomyCombo,
+    ] {
+        state.play_relic_trigger(category, &relic_event);
+    }
 
     VfxRegistrationSummary {
         events: events.len(),
@@ -27,10 +44,23 @@ pub struct MockVfxCue {
     pub kind: FeedbackKind,
     pub layer: VfxLayer,
     pub intensity: f32,
+    pub color: Option<VfxColor>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VfxColor {
+    Blue,
+    Orange,
+    Green,
+    Purple,
+    Gold,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VfxLayer {
+    MuzzleFlash,
+    AimLineCollapse,
+    CannonRecoil,
     PegFlash,
     BurstParticles,
     RewardRing,
@@ -38,6 +68,9 @@ pub enum VfxLayer {
     ScoreBeam,
     BucketSnap,
     ComboRail,
+    StreakTrail,
+    KineticText,
+    BucketEdgeSpark,
     NearMissMarker,
     FinalOrangeSpotlight,
     ScalePulse,
@@ -52,6 +85,13 @@ pub enum VfxLayer {
 pub struct MockVfxPlaybackState {
     pub accessibility: AccessibilityFeedbackFlags,
     pub emitted: Vec<MockVfxCue>,
+    pub combo_rail: ComboRailState,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ComboRailState {
+    pub visible: bool,
+    pub pulses: Vec<u32>,
 }
 
 impl MockVfxPlaybackState {
@@ -59,6 +99,7 @@ impl MockVfxPlaybackState {
         Self {
             accessibility,
             emitted: Vec::new(),
+            combo_rail: ComboRailState::default(),
         }
     }
 
@@ -66,6 +107,11 @@ impl MockVfxPlaybackState {
         let intensity = ethical_intensity(event.kind, event.intensity);
 
         match event.kind {
+            FeedbackKind::BallLaunch => {
+                self.emit(event.kind, VfxLayer::MuzzleFlash, intensity);
+                self.emit(event.kind, VfxLayer::AimLineCollapse, intensity);
+                self.emit(event.kind, VfxLayer::CannonRecoil, intensity);
+            }
             FeedbackKind::PegHit => {
                 self.emit(event.kind, VfxLayer::PegFlash, intensity);
                 self.emit(event.kind, VfxLayer::BurstParticles, intensity);
@@ -102,8 +148,21 @@ impl MockVfxPlaybackState {
                 self.emit(event.kind, VfxLayer::NearMissMarker, intensity);
             }
             FeedbackKind::ComboThreshold => {
+                self.combo_rail.visible = event.combo >= 3;
+                if [3, 6, 10].contains(&event.combo) || event.combo >= 15 {
+                    self.combo_rail.pulses.push(event.combo);
+                }
                 self.emit(event.kind, VfxLayer::ComboRail, intensity);
                 self.emit(event.kind, VfxLayer::BurstParticles, intensity);
+            }
+            FeedbackKind::LongShot => {
+                self.emit(event.kind, VfxLayer::StreakTrail, intensity);
+                self.emit(event.kind, VfxLayer::KineticText, intensity);
+            }
+            FeedbackKind::LuckyBounce => {
+                self.emit(event.kind, VfxLayer::BucketEdgeSpark, intensity);
+                self.emit(event.kind, VfxLayer::BurstParticles, intensity);
+                self.emit(event.kind, VfxLayer::KineticText, intensity);
             }
             FeedbackKind::FinalOrangeTension => {
                 self.emit(event.kind, VfxLayer::FinalOrangeSpotlight, intensity);
@@ -118,6 +177,17 @@ impl MockVfxPlaybackState {
                 self.emit(event.kind, VfxLayer::LossFade, intensity);
             }
         }
+    }
+
+    pub fn play_relic_trigger(&mut self, category: RelicCategory, event: &FeedbackEvent) {
+        let intensity = ethical_intensity(event.kind, event.intensity);
+        let color = relic_color(category);
+        self.emit_colored(event.kind, VfxLayer::PowerRing, intensity, color);
+        self.emit_colored(event.kind, VfxLayer::RewardRing, intensity, color);
+    }
+
+    pub fn reset_for_shot_end(&mut self) {
+        self.combo_rail.visible = false;
     }
 
     fn emit(&mut self, kind: FeedbackKind, layer: VfxLayer, intensity: f32) {
@@ -142,7 +212,37 @@ impl MockVfxPlaybackState {
             kind,
             layer,
             intensity,
+            color: None,
         });
+    }
+
+    fn emit_colored(
+        &mut self,
+        kind: FeedbackKind,
+        layer: VfxLayer,
+        intensity: f32,
+        color: VfxColor,
+    ) {
+        if self.accessibility.reduce_flash && layer == VfxLayer::RewardRing {
+            return;
+        }
+
+        self.emitted.push(MockVfxCue {
+            kind,
+            layer,
+            intensity,
+            color: Some(color),
+        });
+    }
+}
+
+pub fn relic_color(category: RelicCategory) -> VfxColor {
+    match category {
+        RelicCategory::Ball => VfxColor::Blue,
+        RelicCategory::Peg => VfxColor::Orange,
+        RelicCategory::Basket => VfxColor::Green,
+        RelicCategory::Board => VfxColor::Purple,
+        RelicCategory::EconomyCombo => VfxColor::Gold,
     }
 }
 
@@ -150,6 +250,7 @@ pub fn mock_checkpoint1_feedback_sequence() -> Vec<FeedbackEvent> {
     use content_schema::Vec2;
 
     vec![
+        event(FeedbackKind::BallLaunch, 0.4, Vec2::new(10.0, 1.5), 0, 0),
         event(FeedbackKind::PegHit, 0.35, Vec2::new(5.0, 8.0), 1, 100),
         event(
             FeedbackKind::OrangeHit,
@@ -180,6 +281,14 @@ pub fn mock_checkpoint1_feedback_sequence() -> Vec<FeedbackEvent> {
             Vec2::new(9.0, 16.0),
             6,
             0,
+        ),
+        event(FeedbackKind::LongShot, 0.7, Vec2::new(3.0, 25.0), 6, 750),
+        event(
+            FeedbackKind::LuckyBounce,
+            0.75,
+            Vec2::new(10.0, 34.4),
+            6,
+            5_000,
         ),
         event(
             FeedbackKind::FinalOrangeTension,
@@ -232,13 +341,16 @@ fn ethical_intensity(kind: FeedbackKind, requested: f32) -> f32 {
         FeedbackKind::Loss => 0.2,
         FeedbackKind::NearBucketMiss => 0.25,
         FeedbackKind::PegHit => 0.45,
+        FeedbackKind::BallLaunch => 0.5,
         FeedbackKind::FinalOrangeTension => 0.65,
         FeedbackKind::OrangeHit
         | FeedbackKind::PurpleHit
         | FeedbackKind::GreenHit
         | FeedbackKind::RelicTriggered
         | FeedbackKind::BucketCatch
-        | FeedbackKind::ComboThreshold => 0.85,
+        | FeedbackKind::ComboThreshold
+        | FeedbackKind::LongShot
+        | FeedbackKind::LuckyBounce => 0.85,
         FeedbackKind::ExtremeFever => 1.0,
     };
 
@@ -257,7 +369,8 @@ mod tests {
             .map(|event| event.kind)
             .collect::<HashSet<_>>();
 
-        assert_eq!(kinds.len(), 10);
+        assert_eq!(kinds.len(), 13);
+        assert!(kinds.contains(&FeedbackKind::BallLaunch));
         assert!(kinds.contains(&FeedbackKind::PegHit));
         assert!(kinds.contains(&FeedbackKind::OrangeHit));
         assert!(kinds.contains(&FeedbackKind::PurpleHit));
@@ -265,6 +378,8 @@ mod tests {
         assert!(kinds.contains(&FeedbackKind::BucketCatch));
         assert!(kinds.contains(&FeedbackKind::NearBucketMiss));
         assert!(kinds.contains(&FeedbackKind::ComboThreshold));
+        assert!(kinds.contains(&FeedbackKind::LongShot));
+        assert!(kinds.contains(&FeedbackKind::LuckyBounce));
         assert!(kinds.contains(&FeedbackKind::FinalOrangeTension));
         assert!(kinds.contains(&FeedbackKind::ExtremeFever));
         assert!(kinds.contains(&FeedbackKind::Loss));
@@ -318,5 +433,34 @@ mod tests {
                 | VfxLayer::ScalePulse
                 | VfxLayer::Bloom
         )));
+    }
+
+    #[test]
+    fn combo_rail_pulses_at_thresholds_and_resets_on_shot_end() {
+        let mut state = MockVfxPlaybackState::new(AccessibilityFeedbackFlags::DEFAULT);
+
+        for combo in [3, 6, 10, 15] {
+            state.play_event(&event(
+                FeedbackKind::ComboThreshold,
+                0.75,
+                content_schema::Vec2::ZERO,
+                combo,
+                0,
+            ));
+        }
+
+        assert!(state.combo_rail.visible);
+        assert_eq!(state.combo_rail.pulses, vec![3, 6, 10, 15]);
+        state.reset_for_shot_end();
+        assert!(!state.combo_rail.visible);
+    }
+
+    #[test]
+    fn relic_trigger_color_is_distinct_by_category() {
+        assert_eq!(relic_color(RelicCategory::Ball), VfxColor::Blue);
+        assert_eq!(relic_color(RelicCategory::Peg), VfxColor::Orange);
+        assert_eq!(relic_color(RelicCategory::Basket), VfxColor::Green);
+        assert_eq!(relic_color(RelicCategory::Board), VfxColor::Purple);
+        assert_eq!(relic_color(RelicCategory::EconomyCombo), VfxColor::Gold);
     }
 }

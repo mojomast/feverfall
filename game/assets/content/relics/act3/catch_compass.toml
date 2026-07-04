@@ -1,0 +1,7 @@
+id = "relics/act3/catch_compass"
+name = "Catch Compass"
+category = "Basket"
+rarity = "Common"
+act = 3
+description = "C4 Catch Compass relic expands Basket run identity for later acts."
+effects = ["effects/basket/catch_compass"]

@@ -327,6 +327,56 @@ mod tests {
     }
 
     #[test]
+    fn telemetry_derivation_and_logging_do_not_mutate_physics_state() {
+        let board = minimal_test_board();
+        let input = shot_input();
+        let board_before = board.clone();
+        let input_before = input.clone();
+        let result_before = simulate_shot(777, &board, &input);
+        let events_before = result_before.events.clone();
+        let hash_before = physics_core::stable_hash_events(&events_before);
+
+        let mut logger = JsonlTelemetryLogger::new(Vec::new(), "physics-state-audit");
+        logger
+            .log(TelemetryEvent::ShotStarted {
+                board: board.id.clone(),
+                ball: input.ball_id.clone(),
+                seed: 777,
+                aim_angle_radians: input.aim_angle_radians,
+                launch_speed: input.launch_speed,
+            })
+            .unwrap();
+        for event in &result_before.events {
+            if let Some(telemetry_event) = physics_event_to_telemetry(event) {
+                logger.log(telemetry_event).unwrap();
+            }
+        }
+        logger
+            .log(shot_summary_to_telemetry(
+                board.id.clone(),
+                0,
+                &result_before.summary,
+            ))
+            .unwrap();
+        logger.flush().unwrap();
+
+        let result_after = simulate_shot(777, &board, &input);
+
+        assert_eq!(board, board_before);
+        assert_eq!(input, input_before);
+        assert_eq!(events_before, result_before.events);
+        assert_eq!(
+            hash_before,
+            physics_core::stable_hash_events(&events_before)
+        );
+        assert_eq!(
+            result_before.summary.replay_hash,
+            result_after.summary.replay_hash
+        );
+        assert_eq!(events_before, result_after.events);
+    }
+
+    #[test]
     fn shot_summary_maps_to_vertical_slice_result_event() {
         let board = minimal_test_board();
         let input = shot_input();

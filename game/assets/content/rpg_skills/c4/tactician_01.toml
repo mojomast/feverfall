@@ -1,0 +1,8 @@
+id = "skills/c4/tactician_01"
+name = "Tactician 01"
+tree = "skill_trees/tactician"
+max_rank = 3
+unlock_level = 1
+timing = "Passive"
+description = "C4 tactician skill rank line for campaign build variety."
+effects = ["effects/skills/tactician_01"]

@@ -138,6 +138,33 @@ pub struct BoardDefinition {
     pub tags: Vec<ContentId>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub objectives: Vec<BoardObjective>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub boss_mechanic: Option<BossMechanicDefinition>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BossMechanicDefinition {
+    pub kind: BossMechanicKind,
+    pub intensity: u8,
+    pub cadence_shots: u8,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameters: Vec<ContentId>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BossMechanicKind {
+    ShieldPegs,
+    HealingPegs,
+    RotatingBlockers,
+    TimedHazardRows,
+    SplitterStorm,
+    GravityPulse,
+    BasketLock,
+    GhostVeil,
+    BombCountdown,
+    MirrorWalls,
+    CurseTax,
+    FeverDrain,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -384,6 +411,7 @@ pub fn minimal_test_board() -> BoardDefinition {
         bucket: BasketDef::spec_default(),
         tags: vec![ContentId::new("test").expect("static id is valid")],
         objectives: Vec::new(),
+        boss_mechanic: None,
     }
 }
 
@@ -454,5 +482,6 @@ mod tests {
         let parsed: BoardDefinition = serde_json::from_str(json).unwrap();
 
         assert!(parsed.objectives.is_empty());
+        assert!(parsed.boss_mechanic.is_none());
     }
 }

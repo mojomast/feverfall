@@ -1,0 +1,7 @@
+id = "relics/act2/hazard_map"
+name = "Hazard Map"
+category = "Board"
+rarity = "Uncommon"
+act = 2
+description = "C4 Hazard Map relic expands Board run identity for later acts."
+effects = ["effects/board/hazard_map"]

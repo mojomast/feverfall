@@ -1,0 +1,7 @@
+id = "relics/act2/combo_ledger"
+name = "Combo Ledger"
+category = "EconomyCombo"
+rarity = "Rare"
+act = 2
+description = "C4 Combo Ledger relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/combo_ledger"]

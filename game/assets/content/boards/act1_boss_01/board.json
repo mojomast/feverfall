@@ -45,5 +45,11 @@
     { "id": "obstacle/scripted_row_05", "kind": "Stone", "shape": { "Rect": { "center": { "x": 17.0, "y": 20.0 }, "half_extents": { "x": 1.1, "y": 0.22 } } } }
   ],
   "bucket": { "center": { "x": 10.0, "y": 34.4 }, "width": 3.2, "height": 0.55, "horizontal_speed": 6.0, "motion": "Scripted", "catch_margin": 0.18 },
-  "tags": ["act1", "boss", "scripted_obstacle_row", "archetypes/boss"]
+  "tags": ["act1", "boss", "scripted_obstacle_row", "archetypes/boss"],
+  "boss_mechanic": {
+    "kind": "TimedHazardRows",
+    "intensity": 2,
+    "cadence_shots": 2,
+    "parameters": ["mechanics/timed_hazard_rows"]
+  }
 }

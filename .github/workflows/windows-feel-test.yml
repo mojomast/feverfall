@@ -1,4 +1,4 @@
-name: Windows Feel-Test Build
+name: Windows Checkpoint 4 Build
 
 on:
   workflow_dispatch:
@@ -14,11 +14,13 @@ on:
 
 jobs:
   build:
-    name: Native Windows feel-test binary
+    name: Native Windows Checkpoint 4 binary
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: dtolnay/rust-toolchain@1.95.0
+      - name: Verify full smoke gate
+        run: cargo run -p feverfall_game -- --smoke-full
       - name: Build release feel-test binary
         run: cargo build -p feverfall_game --features bevy_feel_test --release
       - name: Write SHA-256 checksum

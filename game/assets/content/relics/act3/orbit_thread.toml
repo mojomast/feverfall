@@ -1,0 +1,7 @@
+id = "relics/act3/orbit_thread"
+name = "Orbit Thread"
+category = "Board"
+rarity = "Uncommon"
+act = 3
+description = "C4 Orbit Thread relic expands Board run identity for later acts."
+effects = ["effects/board/orbit_thread"]

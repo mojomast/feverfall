@@ -1,0 +1,7 @@
+id = "relics/act3/windmill_key"
+name = "Windmill Key"
+category = "Board"
+rarity = "Common"
+act = 3
+description = "C4 Windmill Key relic expands Board run identity for later acts."
+effects = ["effects/board/windmill_key"]

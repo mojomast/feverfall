@@ -1,0 +1,7 @@
+id = "relics/act3/twin_charge"
+name = "Twin Charge"
+category = "Ball"
+rarity = "Uncommon"
+act = 3
+description = "C4 Twin Charge relic expands Ball run identity for later acts."
+effects = ["effects/ball/twin_charge"]

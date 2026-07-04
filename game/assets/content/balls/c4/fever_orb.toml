@@ -1,0 +1,12 @@
+id = "balls/c4/fever_orb"
+name = "Fever Orb"
+family = "ball_families/combo"
+rarity = "Rare"
+description = "C4 variant tuned for combo ball routing and combo experiments."
+effects = ["effects/ball/fever_orb"]
+
+[stats]
+radius = 0.22
+mass = 1.0
+launch_speed_multiplier = 1.03
+restitution_multiplier = 1.03

@@ -1,4 +1,4 @@
-use content_schema::{ContentId, GearId, SkillId};
+use content_schema::{BoardId, ContentId, GearId, SkillId};
 use serde::{Deserialize, Serialize};
 use std::{fmt, fs, io, path::Path};
 
@@ -6,6 +6,7 @@ pub const CAMPAIGN_SAVE_VERSION: u32 = 1;
 pub const CHAPTER1_SAVE_PATH: &str = "saves/rpg/campaign.json";
 pub const RPG_SAVE_DIR: &str = "saves/rpg/";
 pub const RPG_BALANCE_DIR: &str = "content/balance/rpg/";
+pub const MASTERY_MODE_FLAG: &str = "campaign/mastery_mode_unlocked";
 const LEVEL_THRESHOLDS: &[(u32, u64)] = &[(2, 200), (3, 500), (4, 900)];
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -182,6 +183,256 @@ impl CharacterState {
             skill.cooldown_remaining = skill.cooldown_remaining.saturating_sub(1);
         }
     }
+
+    pub fn mark_chapter_cleared(&mut self, chapter: u8) {
+        let flag = ContentId::new(format!("campaign/chapter{chapter}_cleared"))
+            .expect("formatted flag id is valid");
+        if !self.campaign_flags.iter().any(|existing| existing == &flag) {
+            self.campaign_flags.push(flag);
+        }
+        if self.has_cleared_all_chapters() && !self.mastery_mode_unlocked() {
+            self.campaign_flags
+                .push(ContentId::new(MASTERY_MODE_FLAG).expect("static id is valid"));
+        }
+    }
+
+    pub fn has_cleared_all_chapters(&self) -> bool {
+        (1..=5).all(|chapter| {
+            let flag = format!("campaign/chapter{chapter}_cleared");
+            self.campaign_flags
+                .iter()
+                .any(|existing| existing.as_str() == flag)
+        })
+    }
+
+    pub fn mastery_mode_unlocked(&self) -> bool {
+        self.campaign_flags
+            .iter()
+            .any(|flag| flag.as_str() == MASTERY_MODE_FLAG)
+    }
+
+    pub fn normalized_for_mastery(&self) -> Self {
+        let mut normalized = self.clone();
+        normalized.gear.clear();
+        normalized.inventory = GearInventory::default();
+        normalized
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChapterSpec {
+    pub chapter: u8,
+    pub title: String,
+    pub boards: Vec<RpgBoardSpec>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RpgBoardSpec {
+    pub id: BoardId,
+    pub chapter: u8,
+    pub objectives: Vec<RpgObjective>,
+    pub introduces: Vec<ContentId>,
+    pub normalized_mastery: bool,
+    pub leaderboard_hash: Option<String>,
+}
+
+impl RpgBoardSpec {
+    pub fn summary_hash(&self) -> String {
+        let mut hash = FNV_OFFSET;
+        hash = fnv_str(hash, self.id.as_str());
+        hash = fnv_u64(hash, u64::from(self.chapter));
+        hash = fnv_u64(hash, self.objectives.len() as u64);
+        for objective in &self.objectives {
+            hash = fnv_str(hash, objective.id.as_str());
+            hash = fnv_str(hash, objective.kind.stable_name());
+            hash = fnv_u64(hash, u64::from(objective.target));
+        }
+        for tag in &self.introduces {
+            hash = fnv_str(hash, tag.as_str());
+        }
+        hash = fnv_u64(hash, u64::from(self.normalized_mastery));
+        format!("{hash:016x}")
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RpgObjective {
+    pub id: ContentId,
+    pub kind: RpgObjectiveKind,
+    pub target: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RpgObjectiveKind {
+    ClearAllOrange,
+    ScoreAtLeast,
+    CatchStreak,
+    GearSynergy,
+    LowBallClear,
+}
+
+impl RpgObjectiveKind {
+    fn stable_name(self) -> &'static str {
+        match self {
+            Self::ClearAllOrange => "clear_all_orange",
+            Self::ScoreAtLeast => "score_at_least",
+            Self::CatchStreak => "catch_streak",
+            Self::GearSynergy => "gear_synergy",
+            Self::LowBallClear => "low_ball_clear",
+        }
+    }
+}
+
+pub fn campaign_chapters() -> Vec<ChapterSpec> {
+    vec![
+        ChapterSpec {
+            chapter: 1,
+            title: "Chapter 1: Ember Lessons".to_string(),
+            boards: chapter_boards(1, 5, "rpg_ch1", |index| match index {
+                2 => vec![objective("score", RpgObjectiveKind::ScoreAtLeast, 15_000)],
+                3 => vec![objective("catch", RpgObjectiveKind::CatchStreak, 3)],
+                4 => vec![objective("low_ball", RpgObjectiveKind::LowBallClear, 8)],
+                _ => vec![objective("orange", RpgObjectiveKind::ClearAllOrange, 1)],
+            }),
+        },
+        ChapterSpec {
+            chapter: 2,
+            title: "Chapter 2: Stone and Skill".to_string(),
+            boards: chapter_boards(2, 12, "rpg_ch2", |index| {
+                let mut objectives = vec![objective("orange", RpgObjectiveKind::ClearAllOrange, 1)];
+                if index >= 3 {
+                    objectives.push(objective(
+                        "score",
+                        RpgObjectiveKind::ScoreAtLeast,
+                        18_000 + index * 750,
+                    ));
+                }
+                objectives
+            }),
+        },
+        ChapterSpec {
+            chapter: 3,
+            title: "Chapter 3: Resonant Gear".to_string(),
+            boards: chapter_boards(3, 15, "rpg_ch3", |index| {
+                let mut objectives = vec![objective("gear", RpgObjectiveKind::GearSynergy, 2)];
+                if index % 3 == 0 {
+                    objectives.push(objective(
+                        "score",
+                        RpgObjectiveKind::ScoreAtLeast,
+                        24_000 + index * 900,
+                    ));
+                }
+                objectives
+            }),
+        },
+        ChapterSpec {
+            chapter: 4,
+            title: "Chapter 4: Split Demands".to_string(),
+            boards: chapter_boards(4, 15, "rpg_ch4", |index| {
+                vec![
+                    objective("orange", RpgObjectiveKind::ClearAllOrange, 1),
+                    objective("catch", RpgObjectiveKind::CatchStreak, 2 + (index % 3)),
+                ]
+            }),
+        },
+        ChapterSpec {
+            chapter: 5,
+            title: "Endgame: Mastery Towers".to_string(),
+            boards: mastery_boards(),
+        },
+    ]
+}
+
+pub fn campaign_completion_requires_all_five_chapters() -> usize {
+    campaign_chapters().len()
+}
+
+fn chapter_boards<F>(chapter: u8, count: u32, prefix: &str, objectives: F) -> Vec<RpgBoardSpec>
+where
+    F: Fn(u32) -> Vec<RpgObjective>,
+{
+    (1..=count)
+        .map(|index| board_spec(chapter, prefix, index, objectives(index), false))
+        .collect()
+}
+
+fn mastery_boards() -> Vec<RpgBoardSpec> {
+    (1..=4)
+        .map(|index| {
+            let mut board = board_spec(
+                5,
+                "rpg_ch5_mastery",
+                index,
+                vec![
+                    objective("orange", RpgObjectiveKind::ClearAllOrange, 1),
+                    objective(
+                        "score",
+                        RpgObjectiveKind::ScoreAtLeast,
+                        35_000 + index * 2_500,
+                    ),
+                    objective("catch", RpgObjectiveKind::CatchStreak, 2),
+                ],
+                true,
+            );
+            board.leaderboard_hash = Some(board.summary_hash());
+            board
+        })
+        .collect()
+}
+
+fn board_spec(
+    chapter: u8,
+    prefix: &str,
+    index: u32,
+    objectives: Vec<RpgObjective>,
+    normalized_mastery: bool,
+) -> RpgBoardSpec {
+    let introduces = match chapter {
+        2 => vec!["rpg/obstacles", "rpg/active_skills", "rpg/score_objectives"],
+        3 => vec!["rpg/gear_sets", "rpg/gear_synergy_objectives"],
+        4 => vec!["rpg/multi_objective_boards"],
+        5 => vec!["rpg/normalized_mastery", "rpg/leaderboard_hash"],
+        _ => vec!["rpg/chapter1_basics"],
+    };
+    RpgBoardSpec {
+        id: BoardId::new(format!("boards/{prefix}_{index:02}"))
+            .expect("formatted board id is valid"),
+        chapter,
+        objectives,
+        introduces: introduces
+            .into_iter()
+            .map(|id| ContentId::new(id).expect("static id is valid"))
+            .collect(),
+        normalized_mastery,
+        leaderboard_hash: None,
+    }
+}
+
+fn objective(suffix: &str, kind: RpgObjectiveKind, target: u32) -> RpgObjective {
+    RpgObjective {
+        id: ContentId::new(format!("objective/{suffix}")).expect("formatted objective id is valid"),
+        kind,
+        target,
+    }
+}
+
+const FNV_OFFSET: u64 = 0xcbf2_9ce4_8422_2325;
+const FNV_PRIME: u64 = 0x0000_0100_0000_01b3;
+
+fn fnv_str(mut hash: u64, value: &str) -> u64 {
+    for byte in value.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(FNV_PRIME);
+    }
+    hash
+}
+
+fn fnv_u64(mut hash: u64, value: u64) -> u64 {
+    for byte in value.to_le_bytes() {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(FNV_PRIME);
+    }
+    hash
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -497,5 +748,65 @@ mod tests {
             Err(CampaignSaveError::UnknownVersion(99))
         ));
         let _ = fs::remove_file(path);
+    }
+
+    #[test]
+    fn chapter2_to_5_catalog_has_required_board_counts_and_objectives() {
+        let chapters = campaign_chapters();
+
+        assert_eq!(chapters.len(), 5);
+        assert_eq!(chapters[1].boards.len(), 12);
+        assert_eq!(chapters[2].boards.len(), 15);
+        assert_eq!(chapters[3].boards.len(), 15);
+        assert_eq!(chapters[4].boards.len(), 4);
+        assert!(chapters[1].boards.iter().all(|board| board
+            .introduces
+            .iter()
+            .any(|tag| tag.as_str() == "rpg/active_skills")));
+        assert!(chapters[1].boards.iter().any(|board| board
+            .objectives
+            .iter()
+            .any(|objective| objective.kind == RpgObjectiveKind::ScoreAtLeast)));
+        assert!(chapters[2].boards.iter().all(|board| board
+            .objectives
+            .iter()
+            .any(|objective| objective.kind == RpgObjectiveKind::GearSynergy)));
+        assert!(chapters[3]
+            .boards
+            .iter()
+            .all(|board| board.objectives.len() >= 2));
+    }
+
+    #[test]
+    fn chapter5_mastery_boards_zero_gear_stats_and_have_leaderboard_hashes() {
+        let chapters = campaign_chapters();
+        let mastery = &chapters[4].boards;
+        let character = CharacterState::chapter1();
+        let normalized = character.normalized_for_mastery();
+
+        assert!(mastery.iter().all(|board| board.normalized_mastery));
+        assert!(mastery
+            .iter()
+            .all(|board| board.leaderboard_hash.as_deref() == Some(board.summary_hash().as_str())));
+        assert!(normalized.gear.is_empty());
+        assert!(normalized.inventory.launchers.is_empty());
+        assert!(normalized.inventory.core_balls.is_empty());
+        assert_eq!(normalized.stats, character.stats);
+        assert_eq!(normalized.unlocked_skills, character.unlocked_skills);
+    }
+
+    #[test]
+    fn campaign_completion_requires_all_five_chapters_and_unlocks_mastery() {
+        let mut character = CharacterState::chapter1();
+
+        assert_eq!(campaign_completion_requires_all_five_chapters(), 5);
+        for chapter in 1..=4 {
+            character.mark_chapter_cleared(chapter);
+            assert!(!character.mastery_mode_unlocked());
+        }
+        character.mark_chapter_cleared(5);
+
+        assert!(character.has_cleared_all_chapters());
+        assert!(character.mastery_mode_unlocked());
     }
 }

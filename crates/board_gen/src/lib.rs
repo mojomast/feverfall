@@ -71,6 +71,9 @@ pub enum BoardValidationIssue {
         viable_angles: usize,
     },
     MissingRpgObjective,
+    MissingBossMechanic,
+    InvalidBossMechanicCadence,
+    InvalidBossMechanicIntensity,
     InvalidObjectiveTarget {
         objective: ContentId,
     },
@@ -206,6 +209,7 @@ pub fn generate_board(params: &GenerationParams) -> BoardDefinition {
         bucket: BasketDef::spec_default(),
         tags: vec![params.archetype.clone()],
         objectives: Vec::new(),
+        boss_mechanic: None,
     }
 }
 
@@ -301,10 +305,29 @@ pub fn validate_board(board: &BoardDefinition) -> BoardValidationReport {
     }
 
     validate_objectives(board, rpg_chapter_board, &mut issues);
+    validate_boss_mechanic(board, boss_board, &mut issues);
 
     BoardValidationReport {
         board_id: board.id.clone(),
         issues,
+    }
+}
+
+fn validate_boss_mechanic(
+    board: &BoardDefinition,
+    boss_board: bool,
+    issues: &mut Vec<BoardValidationIssue>,
+) {
+    if boss_board && board.boss_mechanic.is_none() {
+        issues.push(BoardValidationIssue::MissingBossMechanic);
+    }
+    if let Some(mechanic) = &board.boss_mechanic {
+        if mechanic.intensity == 0 {
+            issues.push(BoardValidationIssue::InvalidBossMechanicIntensity);
+        }
+        if mechanic.cadence_shots == 0 {
+            issues.push(BoardValidationIssue::InvalidBossMechanicCadence);
+        }
     }
 }
 

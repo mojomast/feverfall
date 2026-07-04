@@ -4,8 +4,8 @@ use board_gen::{authored_boards_dir, load_authored_boards, BoardLoadError};
 use content_schema::{BoardDefinition, BoardId, ContentId, GearId, PegKind, Score, SkillId};
 use game_rules::{GameEvent, ResourceKind};
 use rpg_mode::{
-    load_campaign, save_campaign, CampaignSaveError, ChapterStat, CharacterError, CharacterState,
-    GearSlot, CHAPTER1_SAVE_PATH,
+    campaign_chapters, load_campaign, save_campaign, CampaignSaveError, ChapterStat,
+    CharacterError, CharacterState, GearSlot, RpgBoardSpec, CHAPTER1_SAVE_PATH,
 };
 use telemetry::TelemetryEvent;
 
@@ -117,6 +117,106 @@ pub fn chapter1_board_catalog() -> Vec<(&'static str, ChapterObjective)> {
         ),
         ("boards/rpg_ch1_05", ChapterObjective::ClearAllOrange),
     ]
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RpgCampaignSmokeSession {
+    pub character: CharacterState,
+    pub chapters: Vec<RpgChapterSmokeSummary>,
+}
+
+impl RpgCampaignSmokeSession {
+    pub fn summary_hash(&self) -> String {
+        let mut hash = FNV_OFFSET;
+        hash = fnv_u64(hash, u64::from(self.character.level));
+        hash = fnv_u64(hash, self.character.xp);
+        hash = fnv_u64(hash, u64::from(self.character.mastery_mode_unlocked()));
+        for chapter in &self.chapters {
+            hash = fnv_u64(hash, u64::from(chapter.chapter));
+            hash = fnv_str(hash, chapter.board.as_str());
+            hash = fnv_str(hash, &chapter.board_hash);
+            hash = fnv_u64(hash, u64::from(chapter.normalized_mastery));
+        }
+        format!("{hash:016x}")
+    }
+
+    pub fn summary_lines(&self) -> Vec<String> {
+        let mut lines = self
+            .chapters
+            .iter()
+            .map(RpgChapterSmokeSummary::display_line)
+            .collect::<Vec<_>>();
+        lines.push(format!(
+            "rpg_campaign smoke chapters={} completion=all_5 mastery_mode={} hash={}",
+            self.chapters
+                .iter()
+                .map(|chapter| chapter.chapter.to_string())
+                .collect::<Vec<_>>()
+                .join(","),
+            self.character.mastery_mode_unlocked(),
+            self.summary_hash()
+        ));
+        lines
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct RpgChapterSmokeSummary {
+    pub chapter: u8,
+    pub board: BoardId,
+    pub objective_count: usize,
+    pub normalized_mastery: bool,
+    pub board_hash: String,
+}
+
+impl RpgChapterSmokeSummary {
+    fn from_board(board: &RpgBoardSpec) -> Self {
+        Self {
+            chapter: board.chapter,
+            board: board.id.clone(),
+            objective_count: board.objectives.len(),
+            normalized_mastery: board.normalized_mastery,
+            board_hash: board
+                .leaderboard_hash
+                .clone()
+                .unwrap_or_else(|| board.summary_hash()),
+        }
+    }
+
+    pub fn display_line(&self) -> String {
+        format!(
+            "rpg_ch{} smoke board={} objectives={} normalized_mastery={} hash={}",
+            self.chapter,
+            self.board,
+            self.objective_count,
+            self.normalized_mastery,
+            self.board_hash
+        )
+    }
+}
+
+pub fn run_rpg_campaign_smoke() -> RpgCampaignSmokeSession {
+    let chapters = campaign_chapters();
+    let sampled = [(1u8, 0usize), (3, 0), (5, 0)];
+    let mut character = CharacterState::chapter1();
+    let mut summaries = Vec::new();
+
+    for chapter in 1..=5 {
+        character.mark_chapter_cleared(chapter);
+    }
+    for (chapter, index) in sampled {
+        let board = chapters
+            .iter()
+            .find(|spec| spec.chapter == chapter)
+            .and_then(|spec| spec.boards.get(index))
+            .expect("campaign smoke sample board exists");
+        summaries.push(RpgChapterSmokeSummary::from_board(board));
+    }
+
+    RpgCampaignSmokeSession {
+        character,
+        chapters: summaries,
+    }
 }
 
 #[derive(Debug)]
@@ -335,5 +435,25 @@ mod tests {
         assert!(second.loaded_from_save);
         assert_eq!(first.summary_hash(), second.summary_hash());
         let _ = std::fs::remove_file(path);
+    }
+
+    #[test]
+    fn campaign_smoke_samples_ch1_ch3_ch5_and_unlocks_mastery() {
+        let session = run_rpg_campaign_smoke();
+
+        assert_eq!(session.chapters.len(), 3);
+        assert_eq!(session.chapters[0].board.as_str(), "boards/rpg_ch1_01");
+        assert_eq!(session.chapters[1].board.as_str(), "boards/rpg_ch3_01");
+        assert_eq!(
+            session.chapters[2].board.as_str(),
+            "boards/rpg_ch5_mastery_01"
+        );
+        assert!(session.chapters[2].normalized_mastery);
+        assert!(session.character.has_cleared_all_chapters());
+        assert!(session.character.mastery_mode_unlocked());
+        assert_eq!(
+            session.summary_hash(),
+            run_rpg_campaign_smoke().summary_hash()
+        );
     }
 }

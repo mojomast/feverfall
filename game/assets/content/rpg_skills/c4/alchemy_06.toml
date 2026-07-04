@@ -1,0 +1,8 @@
+id = "skills/c4/alchemy_06"
+name = "Alchemy 06"
+tree = "skill_trees/alchemy"
+max_rank = 3
+unlock_level = 2
+timing = "AfterPegHit"
+description = "C4 alchemy skill rank line for campaign build variety."
+effects = ["effects/skills/alchemy_06"]

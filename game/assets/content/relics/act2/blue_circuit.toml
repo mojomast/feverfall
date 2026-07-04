@@ -1,0 +1,7 @@
+id = "relics/act2/blue_circuit"
+name = "Blue Circuit"
+category = "Peg"
+rarity = "Uncommon"
+act = 2
+description = "C4 Blue Circuit relic expands Peg run identity for later acts."
+effects = ["effects/peg/blue_circuit"]

@@ -1,0 +1,7 @@
+id = "relics/act3/reroll_coupon"
+name = "Reroll Coupon"
+category = "EconomyCombo"
+rarity = "Common"
+act = 3
+description = "C4 Reroll Coupon relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/reroll_coupon"]

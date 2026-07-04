@@ -13,6 +13,7 @@ pub struct FeedbackEvent {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum FeedbackKind {
+    BallLaunch,
     PegHit,
     OrangeHit,
     PurpleHit,
@@ -20,6 +21,8 @@ pub enum FeedbackKind {
     BucketCatch,
     NearBucketMiss,
     ComboThreshold,
+    LongShot,
+    LuckyBounce,
     FinalOrangeTension,
     ExtremeFever,
     RelicTriggered,

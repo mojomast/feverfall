@@ -1,0 +1,439 @@
+{
+  "id": "boards/c4_act2_elite_05",
+  "size": {
+    "x": 20.0,
+    "y": 35.56
+  },
+  "cannon_position": {
+    "x": 10.0,
+    "y": 1.5
+  },
+  "kill_plane_y": 36.5,
+  "pegs": [
+    {
+      "id": "peg/o01",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 1.6,
+            "y": 6.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o02",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 3.2,
+            "y": 7.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o03",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 4.8,
+            "y": 8.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o04",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 6.4,
+            "y": 6.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o05",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 8.0,
+            "y": 7.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o06",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 9.6,
+            "y": 8.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o07",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 11.2,
+            "y": 6.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o08",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 12.8,
+            "y": 7.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o09",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 14.4,
+            "y": 8.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o10",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 16.0,
+            "y": 6.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o11",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 18.0,
+            "y": 7.95
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o12",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 3.0,
+            "y": 15.5
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o13",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 4.75,
+            "y": 17.6
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o14",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 6.5,
+            "y": 19.7
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o15",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 8.25,
+            "y": 21.8
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o16",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 10.0,
+            "y": 15.5
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o17",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 11.75,
+            "y": 17.6
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o18",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 13.5,
+            "y": 19.7
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o19",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 15.25,
+            "y": 21.8
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/o20",
+      "kind": "Orange",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 17.0,
+            "y": 15.5
+          },
+          "radius": 0.35
+        }
+      }
+    },
+    {
+      "id": "peg/b01",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 2.0,
+            "y": 11.5
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b02",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 6.0,
+            "y": 12.3
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b03",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 10.0,
+            "y": 11.5
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b04",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 14.0,
+            "y": 12.3
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b05",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 18.0,
+            "y": 11.5
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b06",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 2.0,
+            "y": 24.3
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b07",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 6.0,
+            "y": 23.5
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b08",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 10.0,
+            "y": 24.3
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b09",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 14.0,
+            "y": 23.5
+          },
+          "radius": 0.32
+        }
+      }
+    },
+    {
+      "id": "peg/b10",
+      "kind": "Blue",
+      "shape": {
+        "Circle": {
+          "center": {
+            "x": 18.0,
+            "y": 24.3
+          },
+          "radius": 0.32
+        }
+      }
+    }
+  ],
+  "obstacles": [
+    {
+      "id": "obstacle/center_gate",
+      "kind": "Stone",
+      "shape": {
+        "Rect": {
+          "center": {
+            "x": 10.0,
+            "y": 21.0
+          },
+          "half_extents": {
+            "x": 1.0,
+            "y": 0.22
+          }
+        }
+      }
+    }
+  ],
+  "bucket": {
+    "center": {
+      "x": 10.0,
+      "y": 34.4
+    },
+    "width": 3.0,
+    "height": 0.55,
+    "horizontal_speed": 6.0,
+    "motion": "PingPong",
+    "catch_margin": 0.18
+  },
+  "tags": [
+    "act2",
+    "elite",
+    "c4",
+    "archetypes/fan"
+  ]
+}

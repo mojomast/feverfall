@@ -1,0 +1,7 @@
+id = "relics/act2/splinter_mold"
+name = "Splinter Mold"
+category = "Ball"
+rarity = "Uncommon"
+act = 2
+description = "C4 Splinter Mold relic expands Ball run identity for later acts."
+effects = ["effects/ball/splinter_mold"]

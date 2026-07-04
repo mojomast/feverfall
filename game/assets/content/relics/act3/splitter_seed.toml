@@ -1,0 +1,7 @@
+id = "relics/act3/splitter_seed"
+name = "Splitter Seed"
+category = "Peg"
+rarity = "Rare"
+act = 3
+description = "C4 Splitter Seed relic expands Peg run identity for later acts."
+effects = ["effects/peg/splitter_seed"]

@@ -1,0 +1,7 @@
+id = "relics/act3/interest_lantern"
+name = "Interest Lantern"
+category = "EconomyCombo"
+rarity = "Uncommon"
+act = 3
+description = "C4 Interest Lantern relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/interest_lantern"]

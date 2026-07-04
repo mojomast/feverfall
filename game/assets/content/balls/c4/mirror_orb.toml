@@ -1,0 +1,12 @@
+id = "balls/c4/mirror_orb"
+name = "Mirror Orb"
+family = "ball_families/trick"
+rarity = "Rare"
+description = "C4 variant tuned for trick ball routing and combo experiments."
+effects = ["effects/ball/mirror_orb"]
+
+[stats]
+radius = 0.21
+mass = 0.9
+launch_speed_multiplier = 1.02
+restitution_multiplier = 1.12

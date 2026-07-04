@@ -28,11 +28,14 @@ impl fmt::Display for PluginRegistrationSummary {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "plugins registered: ui(first_bounce={}, balls={}, equipped_skills={}, power={}%), audio(cues={}, high_freq={}), vfx(events={}, cues={}, shake={}), debug(collisions={}, first_bounce={}, reused_aim={}), node_map(visible={}, current_highlighted={}, hidden_future={}), reward_ui(cards={}, relic_metadata={}, smoke_auto={})",
+            "plugins registered: ui(first_bounce={}, balls={}, equipped_skills={}, power={}%, screens={}, keyboard={}, layout={}), audio(cues={}, high_freq={}), vfx(events={}, cues={}, shake={}), debug(collisions={}, first_bounce={}, reused_aim={}, f3_fields={}), node_map(visible={}, current_highlighted={}, hidden_future={}), reward_ui(cards={}, relic_metadata={}, smoke_auto={})",
             self.ui.first_bounce_predicted,
             self.ui.balls_remaining,
             self.ui.equipped_skill_count,
             self.ui.active_power_charge_percent,
+            self.ui.placeholder_screen_count,
+            self.ui.keyboard_navigable,
+            self.ui.layout_smoke_passed,
             self.audio.cues,
             self.audio.high_frequency_cues,
             self.vfx.events,
@@ -41,6 +44,7 @@ impl fmt::Display for PluginRegistrationSummary {
             self.debug.collision_events,
             self.debug.first_bounce_predicted,
             self.debug.reused_aim_bounce_predicted,
+            self.debug.f3_overlay_fields,
             self.node_map.visible_nodes,
             self.node_map.current_node_highlighted,
             self.node_map.hidden_future_nodes,
@@ -67,6 +71,8 @@ pub fn register_placeholders() -> PluginRegistrationSummary {
             .len()
         })
         .unwrap_or(0);
+    let _c3_coverage_count = feedback::c3_feedback_trigger_coverage().len();
+    let _relic_category_probe = feedback::relic_category_for_coverage(1);
 
     PluginRegistrationSummary {
         ui: ui::register(),

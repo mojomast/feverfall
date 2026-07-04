@@ -1,0 +1,7 @@
+id = "relics/act2/phase_shell"
+name = "Phase Shell"
+category = "Ball"
+rarity = "Rare"
+act = 2
+description = "C4 Phase Shell relic expands Ball run identity for later acts."
+effects = ["effects/ball/phase_shell"]

@@ -1,0 +1,12 @@
+id = "balls/c4/spark_orb"
+name = "Spark Orb"
+family = "ball_families/elemental"
+rarity = "Common"
+description = "C4 variant tuned for elemental ball routing and combo experiments."
+effects = ["effects/ball/spark_orb"]
+
+[stats]
+radius = 0.21
+mass = 0.95
+launch_speed_multiplier = 1.04
+restitution_multiplier = 1.02

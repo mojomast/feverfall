@@ -1,0 +1,7 @@
+id = "relics/act3/magnet_keel"
+name = "Magnet Keel"
+category = "Basket"
+rarity = "Uncommon"
+act = 3
+description = "C4 Magnet Keel relic expands Basket run identity for later acts."
+effects = ["effects/basket/magnet_keel"]

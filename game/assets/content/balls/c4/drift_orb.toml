@@ -1,0 +1,12 @@
+id = "balls/c4/drift_orb"
+name = "Drift Orb"
+family = "ball_families/control"
+rarity = "Common"
+description = "C4 variant tuned for control ball routing and combo experiments."
+effects = ["effects/ball/drift_orb"]
+
+[stats]
+radius = 0.22
+mass = 0.9
+launch_speed_multiplier = 0.94
+restitution_multiplier = 1.0

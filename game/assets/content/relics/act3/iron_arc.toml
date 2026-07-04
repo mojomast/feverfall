@@ -1,0 +1,7 @@
+id = "relics/act3/iron_arc"
+name = "Iron Arc"
+category = "Ball"
+rarity = "Common"
+act = 3
+description = "C4 Iron Arc relic expands Ball run identity for later acts."
+effects = ["effects/ball/iron_arc"]

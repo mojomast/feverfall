@@ -1,0 +1,11 @@
+{
+  "id": "gear/c4/charm_10",
+  "slot": "Charm",
+  "name": "Charm 10",
+  "rarity": "Uncommon",
+  "level_requirement": 5,
+  "description": "C4 Charm gear option for RPG chapters 2-5.",
+  "effects": [
+    "effects/gear/charm_10"
+  ]
+}

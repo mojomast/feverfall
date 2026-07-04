@@ -1,0 +1,7 @@
+id = "relics/act2/sidewall_garden"
+name = "Sidewall Garden"
+category = "Board"
+rarity = "Common"
+act = 2
+description = "C4 Sidewall Garden relic expands Board run identity for later acts."
+effects = ["effects/board/sidewall_garden"]

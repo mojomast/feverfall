@@ -1,0 +1,7 @@
+id = "relics/act2/echo_lens"
+name = "Echo Lens"
+category = "Ball"
+rarity = "Common"
+act = 2
+description = "C4 Echo Lens relic expands Ball run identity for later acts."
+effects = ["effects/ball/echo_lens"]

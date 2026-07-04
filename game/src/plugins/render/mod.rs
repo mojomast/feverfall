@@ -21,6 +21,27 @@ pub struct FeelTestRenderState {
     pub obstacle_primitives: usize,
     pub aim_line_available: bool,
     pub event_markers: usize,
+    pub ambience: BoardAmbience,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct BoardAmbience {
+    pub archetype: BoardArchetype,
+    pub gradient_top: [f32; 3],
+    pub gradient_bottom: [f32; 3],
+    pub particle_density: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BoardArchetype {
+    Fan,
+    Wave,
+    Clusters,
+    Lanes,
+    Spiral,
+    Rings,
+    Fortress,
+    Boss,
 }
 
 impl FeelTestRenderState {
@@ -32,7 +53,89 @@ impl FeelTestRenderState {
             obstacle_primitives: board.obstacles.len(),
             aim_line_available: debug.aim.first_bounce.is_some(),
             event_markers: debug.collision_events.len(),
+            ambience: board_ambience(board),
         }
+    }
+}
+
+pub fn board_ambience(board: &BoardDefinition) -> BoardAmbience {
+    match board_archetype(board) {
+        BoardArchetype::Fan => BoardAmbience {
+            archetype: BoardArchetype::Fan,
+            gradient_top: [0.05, 0.18, 0.34],
+            gradient_bottom: [0.02, 0.07, 0.16],
+            particle_density: 0.35,
+        },
+        BoardArchetype::Fortress => BoardAmbience {
+            archetype: BoardArchetype::Fortress,
+            gradient_top: [0.34, 0.09, 0.05],
+            gradient_bottom: [0.13, 0.04, 0.03],
+            particle_density: 0.22,
+        },
+        BoardArchetype::Spiral => BoardAmbience {
+            archetype: BoardArchetype::Spiral,
+            gradient_top: [0.16, 0.06, 0.33],
+            gradient_bottom: [0.04, 0.02, 0.12],
+            particle_density: 0.45,
+        },
+        BoardArchetype::Wave => BoardAmbience {
+            archetype: BoardArchetype::Wave,
+            gradient_top: [0.04, 0.22, 0.28],
+            gradient_bottom: [0.02, 0.08, 0.12],
+            particle_density: 0.4,
+        },
+        BoardArchetype::Clusters => BoardAmbience {
+            archetype: BoardArchetype::Clusters,
+            gradient_top: [0.12, 0.18, 0.11],
+            gradient_bottom: [0.04, 0.07, 0.05],
+            particle_density: 0.5,
+        },
+        BoardArchetype::Lanes => BoardAmbience {
+            archetype: BoardArchetype::Lanes,
+            gradient_top: [0.16, 0.14, 0.08],
+            gradient_bottom: [0.06, 0.05, 0.03],
+            particle_density: 0.28,
+        },
+        BoardArchetype::Rings => BoardAmbience {
+            archetype: BoardArchetype::Rings,
+            gradient_top: [0.12, 0.12, 0.24],
+            gradient_bottom: [0.04, 0.04, 0.11],
+            particle_density: 0.42,
+        },
+        BoardArchetype::Boss => BoardAmbience {
+            archetype: BoardArchetype::Boss,
+            gradient_top: [0.28, 0.06, 0.18],
+            gradient_bottom: [0.08, 0.02, 0.06],
+            particle_density: 0.6,
+        },
+    }
+}
+
+fn board_archetype(board: &BoardDefinition) -> BoardArchetype {
+    let text = board
+        .tags
+        .iter()
+        .map(|tag| tag.as_str())
+        .chain(std::iter::once(board.id.as_str()))
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    if text.contains("fortress") {
+        BoardArchetype::Fortress
+    } else if text.contains("spiral") {
+        BoardArchetype::Spiral
+    } else if text.contains("wave") {
+        BoardArchetype::Wave
+    } else if text.contains("clusters") {
+        BoardArchetype::Clusters
+    } else if text.contains("lanes") {
+        BoardArchetype::Lanes
+    } else if text.contains("rings") {
+        BoardArchetype::Rings
+    } else if text.contains("boss") {
+        BoardArchetype::Boss
+    } else {
+        BoardArchetype::Fan
     }
 }
 
@@ -66,5 +169,7 @@ mod tests {
         assert_eq!(render.peg_primitives, board.pegs.len());
         assert!(render.aim_line_available);
         assert_eq!(render.event_markers, debug.collision_events.len());
+        assert_eq!(render.ambience.archetype, BoardArchetype::Fan);
+        assert!(render.ambience.particle_density > 0.0);
     }
 }

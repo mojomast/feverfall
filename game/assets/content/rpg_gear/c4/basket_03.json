@@ -1,0 +1,11 @@
+{
+  "id": "gear/c4/basket_03",
+  "slot": "BasketRig",
+  "name": "Basket 03",
+  "rarity": "Common",
+  "level_requirement": 1,
+  "description": "C4 BasketRig gear option for RPG chapters 2-5.",
+  "effects": [
+    "effects/gear/basket_03"
+  ]
+}

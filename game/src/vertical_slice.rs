@@ -1,13 +1,17 @@
 use std::fmt;
 
-use board_gen::{authored_boards_dir, load_authored_boards, BoardLoadError};
+use board_gen::{
+    authored_boards_dir, generate_board, load_authored_boards, BoardLoadError, GenerationParams,
+};
 use content_schema::{BallId, BoardDefinition, BoardId, ContentId, PegId, PegKind, Score, Seed};
 use game_rules::{promote_physics_event, GameEvent, LossReason, ResourceKind};
 use physics_core::{simulate_shot, ShotInput, ShotResult};
 use rpg_mode::CharacterState;
 use run_mode::{
-    act1_slice_nodes, act1_slice_reward_offers, all_relic_ids, full_run_act_plan, full_run_nodes,
-    MetaProgressionSave, RewardOffer, RunNode, RunNodeKind, RunResources, RunState,
+    act1_slice_nodes, act1_slice_reward_offers, act4_final_boss_mechanic,
+    act4_final_seed_board_specs, act4_seed, act4_unlocked, all_relic_ids, full_run_nodes,
+    BossMechanicKind, CurseFrequency, MetaProgressionSave, RewardOffer, RunNode, RunNodeKind,
+    RunResources, RunState, FULL_FEVER_CLEARED_RECORD,
 };
 
 use crate::plugins::{
@@ -713,6 +717,59 @@ impl RogueliteSmokeRun {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RogueliteAct4SmokeSummary {
+    pub act4_seed: Seed,
+    pub generated_boards: u32,
+    pub final_boss: u32,
+    pub high_curse_boards: u32,
+    pub boss_mechanics: (BossMechanicKind, BossMechanicKind),
+    pub mastery_record: String,
+}
+
+impl RogueliteAct4SmokeSummary {
+    pub fn display_line(&self) -> String {
+        format!(
+            "roguelite_act4_final_seed act4_seed={} generated_boards={} final_boss={} high_curse_boards={} boss_mechanics={:?}+{:?} mastery_record={}",
+            self.act4_seed,
+            self.generated_boards,
+            self.final_boss,
+            self.high_curse_boards,
+            self.boss_mechanics.0,
+            self.boss_mechanics.1,
+            self.mastery_record,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RogueliteFullRunSmoke {
+    pub seed: Seed,
+    pub acts: Vec<RogueliteActSmokeSummary>,
+    pub act4: RogueliteAct4SmokeSummary,
+    pub final_state: RunState,
+    pub meta: MetaProgressionSave,
+    pub summary_hash: String,
+}
+
+impl RogueliteFullRunSmoke {
+    pub fn display_line(&self) -> String {
+        format!(
+            "roguelite_full_run_smoke seed={} acts={} final_act={} hearts={} coins={} sparks={} keys={} curse={} meta_records={} summary_hash={}",
+            self.seed,
+            self.acts.len(),
+            self.final_state.act,
+            self.final_state.resources.hearts,
+            self.final_state.resources.coins,
+            self.final_state.resources.sparks,
+            self.final_state.resources.keys,
+            self.final_state.curse,
+            self.meta.mastery_records.len(),
+            self.summary_hash,
+        )
+    }
+}
+
 pub fn run_roguelite_act1to3_smoke(seed: Seed) -> RogueliteSmokeRun {
     let nodes = full_run_nodes();
     let mut state = RunState::new(seed);
@@ -725,7 +782,7 @@ pub fn run_roguelite_act1to3_smoke(seed: Seed) -> RogueliteSmokeRun {
         .collect();
     let mut acts = Vec::new();
 
-    for plan in full_run_act_plan() {
+    for plan in run_mode::full_run_act_plan() {
         state.act = plan.act;
         let act_nodes = nodes
             .iter()
@@ -756,7 +813,7 @@ pub fn run_roguelite_act1to3_smoke(seed: Seed) -> RogueliteSmokeRun {
                 RunNodeKind::Boss => {
                     bosses += 1;
                     state.resources.coins += 20 + u32::from(plan.act) * 2;
-                    state.resources.keys += u32::from(plan.act == 3);
+                    state.resources.keys += 1;
                 }
                 RunNodeKind::Camp => {
                     utility_nodes += 1;
@@ -814,6 +871,111 @@ pub fn run_roguelite_act1to3_smoke(seed: Seed) -> RogueliteSmokeRun {
     }
 }
 
+pub fn run_roguelite_act1to4_smoke(seed: Seed) -> RogueliteFullRunSmoke {
+    let legacy = run_roguelite_act1to3_smoke(seed);
+    let mut state = legacy.final_state.clone();
+    let mut meta = legacy.meta.clone();
+    assert!(
+        act4_unlocked(&state),
+        "Act 4 smoke requires three collected keys"
+    );
+
+    let specs = act4_final_seed_board_specs(seed);
+    let generated_boards = specs
+        .iter()
+        .map(|spec| generated_act4_board(spec.board_seed, spec.node.kind == RunNodeKind::Boss))
+        .collect::<Vec<_>>();
+    let high_curse_boards = specs
+        .iter()
+        .filter(|spec| {
+            matches!(
+                spec.curse_frequency,
+                CurseFrequency::High | CurseFrequency::Extreme
+            )
+        })
+        .count() as u32;
+
+    for spec in &specs {
+        state.advance_to_node(spec.node.clone());
+        match spec.curse_frequency {
+            CurseFrequency::Standard => {}
+            CurseFrequency::High => state.curse += 1,
+            CurseFrequency::Extreme => state.curse += 2,
+        }
+        state.resources.coins += 16;
+        state.resources.sparks += 3;
+    }
+    state.act = 4;
+    meta.record_full_fever_cleared();
+
+    let mechanic = act4_final_boss_mechanic(seed);
+    let act4 = RogueliteAct4SmokeSummary {
+        act4_seed: act4_seed(seed),
+        generated_boards: generated_boards.len().saturating_sub(1) as u32,
+        final_boss: 1,
+        high_curse_boards,
+        boss_mechanics: (mechanic.primary, mechanic.secondary),
+        mastery_record: FULL_FEVER_CLEARED_RECORD.to_owned(),
+    };
+    let mut acts = legacy.acts.clone();
+    acts.push(RogueliteActSmokeSummary {
+        act: 4,
+        normal_boards: 4,
+        elites: 0,
+        bosses: 1,
+        utility_nodes: 0,
+        hearts: state.resources.hearts,
+        coins: state.resources.coins,
+        sparks: state.resources.sparks,
+        keys: state.resources.keys,
+        branch_choices: 0,
+    });
+    let summary_hash = roguelite_full_smoke_hash(seed, &acts, &act4, &state, &meta);
+
+    RogueliteFullRunSmoke {
+        seed,
+        acts,
+        act4,
+        final_state: state,
+        meta,
+        summary_hash,
+    }
+}
+
+fn generated_act4_board(seed: Seed, boss: bool) -> BoardDefinition {
+    let mut board = generate_board(&GenerationParams {
+        act: 4,
+        difficulty: if boss { 13 } else { 10 },
+        archetype: ContentId::new(if boss {
+            "archetypes/act4/final_boss"
+        } else {
+            "archetypes/act4/final_seed"
+        })
+        .expect("static id is valid"),
+        seed,
+        peg_budget: if boss { 54 } else { 50 },
+        hazard_budget: if boss { 4 } else { 2 },
+    });
+    board
+        .tags
+        .push(ContentId::new("act4").expect("static id is valid"));
+    board
+        .tags
+        .push(ContentId::new("curse/high_frequency").expect("static id is valid"));
+    if boss {
+        board
+            .tags
+            .push(ContentId::new("boss").expect("static id is valid"));
+        board.tags.push(
+            ContentId::new("boss_mechanics/scripted_obstacle_row").expect("static id is valid"),
+        );
+        board
+            .tags
+            .push(ContentId::new("boss_mechanics/bucket_tempo_shift").expect("static id is valid"));
+    }
+    board
+}
+
 fn roguelite_smoke_hash(
     seed: Seed,
     acts: &[RogueliteActSmokeSummary],
@@ -835,6 +997,25 @@ fn roguelite_smoke_hash(
         hash = fnv_u64(hash, u64::from(act.bosses));
         hash = fnv_u64(hash, u64::from(act.utility_nodes));
         hash = fnv_u64(hash, u64::from(act.branch_choices));
+    }
+    format!("{hash:016x}")
+}
+
+fn roguelite_full_smoke_hash(
+    seed: Seed,
+    acts: &[RogueliteActSmokeSummary],
+    act4: &RogueliteAct4SmokeSummary,
+    state: &RunState,
+    meta: &MetaProgressionSave,
+) -> String {
+    let mut hash = FNV_OFFSET;
+    hash = fnv_str(hash, &roguelite_smoke_hash(seed, acts, state, meta));
+    hash = fnv_u64(hash, act4.act4_seed);
+    hash = fnv_u64(hash, u64::from(act4.generated_boards));
+    hash = fnv_u64(hash, u64::from(act4.final_boss));
+    hash = fnv_u64(hash, u64::from(act4.high_curse_boards));
+    for record in &meta.mastery_records {
+        hash = fnv_str(hash, record);
     }
     format!("{hash:016x}")
 }
@@ -1061,6 +1242,28 @@ mod tests {
         assert_eq!(run_summary.replay_hash, session.replay_hash());
         assert_eq!(session.run_summary.as_ref().unwrap().boards_cleared, 3);
         assert_eq!(session.shots.len(), 3);
+    }
+
+    #[test]
+    fn roguelite_act4_smoke_preserves_three_act_base_and_records_mastery() {
+        let base = run_roguelite_act1to3_smoke(0xC3C0_0000_0000_0003);
+        let full = run_roguelite_act1to4_smoke(0xC4A4_0000_0000_0004);
+
+        assert_eq!(base.acts.len(), 3);
+        assert_eq!(base.final_state.act, 3);
+        assert!(base.final_state.resources.keys >= run_mode::ACT4_REQUIRED_KEYS);
+        assert_eq!(full.acts.len(), 4);
+        assert_eq!(full.final_state.act, 4);
+        assert_eq!(full.act4.generated_boards, 4);
+        assert_eq!(full.act4.final_boss, 1);
+        assert_eq!(full.act4.high_curse_boards, 5);
+        assert!(full
+            .meta
+            .mastery_records
+            .iter()
+            .any(|record| record == run_mode::FULL_FEVER_CLEARED_RECORD));
+        assert!(full.display_line().contains("roguelite_full_run_smoke"));
+        assert!(full.act4.display_line().contains("Full Fever Cleared"));
     }
 
     #[test]

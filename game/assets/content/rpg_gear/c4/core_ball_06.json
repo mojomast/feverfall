@@ -1,0 +1,11 @@
+{
+  "id": "gear/c4/core_ball_06",
+  "slot": "CoreBall",
+  "name": "Core Ball 06",
+  "rarity": "Common",
+  "level_requirement": 3,
+  "description": "C4 CoreBall gear option for RPG chapters 2-5.",
+  "effects": [
+    "effects/gear/core_ball_06"
+  ]
+}

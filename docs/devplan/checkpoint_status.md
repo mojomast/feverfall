@@ -254,3 +254,148 @@ Completed:
 
 Next checkpoint:
 - Checkpoint 4.
+
+## Checkpoint 4: In Progress
+
+Status: in integration.
+
+Completed:
+- [C4-G] Added the `cargo run -p feverfall_game -- --smoke-full` release gate covering C2 vertical slice, RPG Chapter 1, RPG campaign Chapter 1/3/5, roguelite Acts 1-4, feel-test smoke, content lint, board validation, and all golden replay fixtures.
+- [C4-G] Updated CI to run every current golden replay fixture and the full release smoke gate.
+- [C4-G] Updated the Windows workflow to run `--smoke-full` before building the native Windows artifact once the workflow changes are available on the target ref.
+- [C4-G] Added root `README.md` and `docs/devplan/release_checklist.md`.
+
+[C4-G] validation completed:
+- `cargo fmt --all -- --check` passes.
+- `cargo test --workspace` passes.
+- `cargo run -p feverfall_game -- --smoke-full` passes with C2 hash `18202124e6b686d8`, RPG Chapter 1 hash `3364e243ba2065f4`, RPG campaign hash `04029810211125c5`, roguelite Act 1-3 hash `e72374145338c3b3`, roguelite Acts 1-4 hash `152fc850303d8356`, and feel-test hash `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
+- `--smoke-full` verified all seven golden replay hashes and reported `content lint passed: 242 unique id(s)` plus board validation PASS for all authored boards.
+
+[C4-G] blockers / nonlocal actions:
+- GitHub workflow dispatch was available and queued run `28720908116`, but it used the remote `main` workflow before these local C4 changes were pushed. Rerun `.github/workflows/windows-feel-test.yml` from a ref containing this change to produce a Checkpoint 4 Windows artifact with `--smoke-full` verified.
+
+## Checkpoint 4: Content Expansion
+
+Status: in progress. [C4-CONTENT], [C4-RPG-CH2TO5], [C4-ACT4], [C4-VFX2], and [C4-UI] are complete and validated; commit coordination is required because unrelated concurrent C4 changes share tracked files and content directories.
+
+[C4-CONTENT] completed:
+- Expanded roguelite relic content to 60 total with exact five-category distribution: Ball 12, Peg 12, Basket 12, Board 12, EconomyCombo 12.
+- Expanded ball variants to 20 total.
+- Expanded RPG gear to 40 total with Launcher 10, CoreBall 10, BasketRig 10, and Charm 10.
+- Expanded RPG skills to 36 total with Trickshot 9, Basket 9, Alchemy 9, and Tactician 9.
+- Expanded authored board templates to 80 total across Acts 1-3 and RPG Chapters 1-5 using C4-safe IDs.
+- Added structured boss mechanic schema and validation. Boss-tagged boards now declare `boss_mechanic`; the content pack covers 12 mechanic kinds across 13 boss-tagged boards.
+- Documented final counts in `docs/design/content_manifest.md`.
+
+[C4-CONTENT] validation completed:
+- `cargo fmt --package content_schema --package board_gen --package content_linter` passes.
+- `cargo test -p content_schema -p board_gen -p content_linter` passes.
+- `cargo run -p content_linter` passes with 242 unique IDs.
+- `cargo run -p board_validator` passes all 80 authored boards.
+- `cargo run -p replay_runner` preserves default hash `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`.
+- `cargo run -p replay_runner -- --replay tests/golden_replays/rpg_ch1_smoke.replay.json` preserves hash `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`.
+- `cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_act1to3_smoke.replay.json` preserves hash `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+
+[C4-CONTENT] blockers / integration notes:
+- No implementation or validation blocker.
+- Commit may require coordination because concurrent C4 edits share tracked files and observed the new content directories.
+- [C4-RPG-CH2TO5] can consume the new `boards/c4_rpg_*`, `gear/c4/*`, and `skills/c4/*` IDs; [C4-ACT4] should keep Act 4 IDs distinct from `boards/c4_act1_*`, `boards/c4_act2_*`, `boards/c4_act3_*`, and `boards/act*_boss_*`.
+
+[C4-RPG-CH2TO5] completed:
+- Added RPG Chapters 2-5 campaign catalog data in `crates/rpg_mode` without duplicating concurrent content-pack board JSON IDs.
+- Chapter 2: 12 boards introducing obstacles, active skills, and score objectives.
+- Chapter 3: 15 boards introducing gear sets and gear-synergy objectives.
+- Chapter 4: 15 multi-objective boards; each combines clear-all-orange with catch-streak requirements.
+- Chapter 5 / Endgame: 4 normalized-stat mastery boards; gear equipment/inventory is zeroed for mastery while base stats and skill tree remain, and each board has a stable leaderboard hash.
+- Campaign completion now requires all 5 chapters cleared and unlocks `campaign/mastery_mode_unlocked` in `CharacterState`.
+- Default game smoke now prints RPG Ch1 board 1, Ch3 board 1, and Ch5 board 1 summaries with hashes before the preserved Chapter 1 save/load smoke summary.
+
+[C4-RPG-CH2TO5] validation completed:
+- `cargo test -p rpg_mode` passes.
+- `cargo run -p board_validator` passes all authored boards observed in the concurrent C4 content pack.
+- `cargo run -p content_linter` passes with 242 unique IDs.
+- `cargo run -p feverfall_game -- --smoke` passes.
+- `cargo run -p replay_runner -- --replay tests/golden_replays/rpg_ch1_smoke.replay.json` matches `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`.
+- `cargo fmt --all -- --check` passes.
+- `cargo test -p feverfall_game rpg_chapter1` passes.
+
+[C4-RPG-CH2TO5] smoke hashes:
+- RPG Ch1 board 1: `c18385eaa33af638`.
+- RPG Ch3 board 1: `01efbd0f270af2e8`.
+- RPG Ch5 board 1: `ef2ae2140c5abcdf`.
+- RPG campaign summary: `04029810211125c5`.
+- Preserved RPG Chapter 1 summary: `3364e243ba2065f4`.
+
+[C4-RPG-CH2TO5] blockers / integration notes:
+- No implementation or validation blocker.
+- Commit not created because the worktree contains unrelated concurrent C4 edits in shared tracked files and untracked content directories; staging whole files would include other agents' work.
+- Other C4 agents should avoid duplicating the `rpg_mode` catalog IDs `boards/rpg_ch2_*`, `boards/rpg_ch3_*`, `boards/rpg_ch4_*`, and `boards/rpg_ch5_mastery_*`; concurrent authored content currently uses `boards/c4_rpg_*` IDs.
+
+[C4-ACT4] completed:
+- Added optional Act 4 Final Seed run-mode APIs without changing the legacy C3 three-act `full_run_act_plan()` and `full_run_nodes()` contracts.
+- Act 4 unlock requires 3 keys collected during Acts 1-3. The smoke path now grants boss keys across Acts 1-3 and then runs the optional Act 4 full-run smoke separately.
+- Act 4 contains 4 high-risk generated boards plus 1 final boss. Board specs are seeded from `act4_seed(run_seed)`, expose `High`/`Extreme` curse frequency, and use boss-tier meta reward rarity.
+- Added `ScriptedBossMechanic`/`BossMechanicKind` and the Act 4 final boss mechanic `boss_mechanics/act4/final_seed_row_tempo`, combining `ScriptedObstacleRow` and `BucketTempoShift` for compatibility with structured boss content.
+- Extended roguelite meta-progression with `mastery_records`; Act 4 victory records the exact string `Full Fever Cleared` and exposes higher-tier Act 4 meta unlock offers.
+- Default game smoke now prints the preserved Act 1-3 summary plus `roguelite_act4_final_seed` and `roguelite_full_run_smoke` full-run summary lines. `--smoke-full` validates the same full-run summary alongside replay/content/board gates.
+
+[C4-ACT4] validation completed:
+- `cargo fmt --all` passes.
+- `cargo test -p run_mode` passes: 16 lib tests plus 2 mode-separation tests.
+- `cargo test -p feverfall_game roguelite_act4_smoke_preserves_three_act_base_and_records_mastery` passes.
+- `cargo run -p content_linter` passes with 242 unique IDs.
+- `cargo run -p board_validator` passes all authored boards observed in the C4 content pack.
+- `cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_act1to3_smoke.replay.json` preserves replay hash `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+- `cargo run -p feverfall_game -- --smoke` passes and prints roguelite Act 1-3 summary hash `e72374145338c3b3` and full Act 1-4 summary hash `152fc850303d8356`.
+- `cargo run -p feverfall_game -- --smoke-full` passes all included content, board, and replay gates and prints `smoke-full summary: PASS checks=12 replays=7`.
+
+[C4-ACT4] smoke hashes:
+- Roguelite Act 1-3 summary: `e72374145338c3b3`.
+- Act 4 derived seed for full-run smoke seed `0xC4A4000000000004`: `14462389677421375956`.
+- Roguelite full Act 1-4 summary: `152fc850303d8356`.
+- Preserved Act 1-3 replay fixture: `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+
+[C4-ACT4] blockers / integration notes:
+- No implementation or validation blocker.
+
+[C4-VFX2] completed:
+- Completed the reactive feedback trigger map with explicit `FeedbackKind` entries for ball launch, long shot, and lucky bounce in addition to peg hits, combo thresholds, bucket catch, near miss, final-orange tension, Extreme Fever, relic triggers, and failure.
+- Wired five audio buses as event-driven cue markers: collision plinks, combo percussion, reward stingers, ambient board hum, and UI confirmations. Placeholder audio layers are marked `// TODO(audio): awaiting asset`.
+- Added peg-hit pitch escalation capped at combo 15 and merged peg-hit overload beyond 12 simultaneous samples into chord-cluster cue markers.
+- Added combo rail state: visible at combo >=3, pulses at 3/6/10/15+, and resets on shot end.
+- Added relic trigger flash colors by category: ball blue, peg orange, basket green, board purple, economy/combo gold.
+- Added board archetype ambience gradients and particle-density settings for fan, wave, clusters, lanes, spiral, rings, fortress, and boss boards.
+- Verified reduce-flash/reduce-shake/high-frequency accessibility flags suppress the relevant VFX/audio layers.
+
+[C4-VFX2] validation completed:
+- `cargo fmt --all` passes.
+- `cargo clippy -p feverfall_game --features bevy_feel_test -- -D warnings` passes.
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` passes and prints `c4_vfx_triggers=21`.
+- `cargo test -p feverfall_game` passes: 47 tests.
+
+[C4-VFX2] blockers / integration notes:
+- No implementation or validation blocker.
+- Shared feedback contract changed: `FeedbackKind` now includes `BallLaunch`, `LongShot`, and `LuckyBounce`; other C4 agents should use these instead of encoding those cues as combo threshold or bucket-only events.
+- The `MetaProgressionSave` JSON shape changed by adding `mastery_records`; no backward-compatibility migration was added because there is no shipped/persisted save requirement yet.
+- [C4-CONTENT] can map authored boss content to `boss_mechanics/act4/final_seed_row_tempo`, `ScriptedObstacleRow`, and `BucketTempoShift`.
+- Commit may require coordination if unrelated concurrent C4 work remains in shared tracked files.
+
+[C4-UI] completed:
+- Added model-level production-placeholder UI coverage in `game/src/plugins/ui/mod.rs` for the main menu, settings, full roguelite node map/shop/forge/event/relic bar, and RPG chapter select/gear equip/skill tree/campaign progress screens.
+- Main menu exposes `Feverfall`, Play Roguelite, Play RPG, Settings, and Quit actions.
+- Settings exposes stubbed Master/Music/SFX sliders, reduce flash/reduce shake toggles, and key rebind placeholders.
+- Roguelite UI models expose full branch-path node display, shop buy/reroll/skip actions, forge upgrade previews, event risk/reward choices, and a relic bar that scrolls when more than six relics are present.
+- RPG UI models expose chapter selection, four gear slots with comparison deltas, four skill trees with unlock pulse state, and campaign progress objectives.
+- Added `F3DebugOverlay` with physics tick rate, last replay hash, current board ID, active relic count, and telemetry event count.
+- Registration smoke now reports `screens=13`, `keyboard=true`, `layout=true`, and `f3_fields=5`.
+- Restored the Act 4 full-smoke hash helper needed by the feature-built strict clippy gate.
+
+[C4-UI] validation completed:
+- `cargo test -p feverfall_game` passes: 47 tests.
+- `cargo clippy -p feverfall_game --features bevy_feel_test -- -D warnings` passes.
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` passes.
+
+[C4-UI] blockers / integration notes:
+- No implementation or validation blocker.
+- Renderer automation remains model/smoke based; the 1280x720 and 1920x1080 layout coverage is represented by `UiViewport::HD` and `UiViewport::FHD` smoke assertions until a full renderer test harness exists.
+- Other C4 agents should consume `PlaceholderScreenSuite`, `FocusList`, and `F3DebugOverlay` rather than adding duplicate UI state contracts.

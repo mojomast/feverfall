@@ -1,0 +1,7 @@
+id = "relics/act2/spark_tithe"
+name = "Spark Tithe"
+category = "EconomyCombo"
+rarity = "Common"
+act = 2
+description = "C4 Spark Tithe relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/spark_tithe"]

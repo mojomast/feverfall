@@ -1,6 +1,6 @@
 {
   "id": "gear/rpg_ch1/luck_trinket",
-  "slot": "Trinket",
+  "slot": "Charm",
   "name": "Luck Trinket",
   "description": "Simple Chapter 1 trinket used as minimal C3 content-lint coverage."
 }

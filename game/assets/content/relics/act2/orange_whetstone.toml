@@ -1,0 +1,7 @@
+id = "relics/act2/orange_whetstone"
+name = "Orange Whetstone"
+category = "Peg"
+rarity = "Common"
+act = 2
+description = "C4 Orange Whetstone relic expands Peg run identity for later acts."
+effects = ["effects/peg/orange_whetstone"]

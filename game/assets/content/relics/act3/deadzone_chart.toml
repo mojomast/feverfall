@@ -1,0 +1,7 @@
+id = "relics/act3/deadzone_chart"
+name = "Deadzone Chart"
+category = "Board"
+rarity = "Rare"
+act = 3
+description = "C4 Deadzone Chart relic expands Board run identity for later acts."
+effects = ["effects/board/deadzone_chart"]

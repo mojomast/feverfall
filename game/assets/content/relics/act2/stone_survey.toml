@@ -1,0 +1,7 @@
+id = "relics/act2/stone_survey"
+name = "Stone Survey"
+category = "Board"
+rarity = "Uncommon"
+act = 2
+description = "C4 Stone Survey relic expands Board run identity for later acts."
+effects = ["effects/board/stone_survey"]

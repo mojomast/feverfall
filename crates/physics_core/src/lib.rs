@@ -910,6 +910,7 @@ mod tests {
             },
             tags: Vec::new(),
             objectives: Vec::new(),
+            boss_mechanic: None,
         }
     }
 

@@ -8,6 +8,7 @@ pub struct DebugRegistrationSummary {
     pub collision_events: usize,
     pub first_bounce_predicted: bool,
     pub reused_aim_bounce_predicted: bool,
+    pub f3_overlay_fields: usize,
 }
 
 pub fn register() -> DebugRegistrationSummary {
@@ -27,10 +28,69 @@ pub fn register() -> DebugRegistrationSummary {
     let aim_hud = AimHudState::from_board_and_input(&board, &input);
     let reused_aim = DebugAimOverlay::from_aim_hud(&aim_hud);
 
+    let mut f3 = F3DebugOverlay::from_runtime(
+        120,
+        overlay.replay_hash.clone(),
+        overlay.board_id.clone(),
+        3,
+        overlay.event_log_summary.total_events,
+    );
+    f3.handle_f3();
+
     DebugRegistrationSummary {
         collision_events: overlay.collision_events.len(),
         first_bounce_predicted: overlay.aim.first_bounce.is_some(),
         reused_aim_bounce_predicted: reused_aim.first_bounce.is_some(),
+        f3_overlay_fields: f3.visible_lines().len(),
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct F3DebugOverlay {
+    pub visible: bool,
+    pub physics_tick_rate_hz: u32,
+    pub last_replay_hash: Option<String>,
+    pub current_board_id: BoardId,
+    pub active_relic_count: usize,
+    pub telemetry_event_count: usize,
+}
+
+impl F3DebugOverlay {
+    pub fn from_runtime(
+        physics_tick_rate_hz: u32,
+        last_replay_hash: Option<String>,
+        current_board_id: BoardId,
+        active_relic_count: usize,
+        telemetry_event_count: usize,
+    ) -> Self {
+        Self {
+            visible: false,
+            physics_tick_rate_hz,
+            last_replay_hash,
+            current_board_id,
+            active_relic_count,
+            telemetry_event_count,
+        }
+    }
+
+    pub fn handle_f3(&mut self) {
+        self.visible = !self.visible;
+    }
+
+    pub fn visible_lines(&self) -> Vec<String> {
+        if !self.visible {
+            return Vec::new();
+        }
+        vec![
+            format!("physics_tick_rate={}hz", self.physics_tick_rate_hz),
+            format!(
+                "last_replay_hash={}",
+                self.last_replay_hash.as_deref().unwrap_or("<none>")
+            ),
+            format!("current_board_id={}", self.current_board_id),
+            format!("active_relic_count={}", self.active_relic_count),
+            format!("telemetry_event_count={}", self.telemetry_event_count),
+        ]
     }
 }
 
@@ -263,6 +323,35 @@ impl CollisionEventLogEntry {
             }),
             PhysicsEvent::ShotEnded { .. } => None,
         }
+    }
+}
+
+#[cfg(test)]
+mod f3_tests {
+    use super::*;
+
+    #[test]
+    fn f3_overlay_toggles_required_fields() {
+        let mut overlay = F3DebugOverlay::from_runtime(
+            120,
+            Some("abc123".to_owned()),
+            BoardId::new("boards/test").unwrap(),
+            7,
+            11,
+        );
+
+        assert!(overlay.visible_lines().is_empty());
+        overlay.handle_f3();
+        let lines = overlay.visible_lines();
+
+        assert_eq!(lines.len(), 5);
+        assert!(lines.iter().any(|line| line == "physics_tick_rate=120hz"));
+        assert!(lines.iter().any(|line| line == "last_replay_hash=abc123"));
+        assert!(lines
+            .iter()
+            .any(|line| line == "current_board_id=boards/test"));
+        assert!(lines.iter().any(|line| line == "active_relic_count=7"));
+        assert!(lines.iter().any(|line| line == "telemetry_event_count=11"));
     }
 }
 

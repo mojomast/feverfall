@@ -1,0 +1,7 @@
+id = "relics/act2/fever_receipt"
+name = "Fever Receipt"
+category = "EconomyCombo"
+rarity = "Uncommon"
+act = 2
+description = "C4 Fever Receipt relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/fever_receipt"]

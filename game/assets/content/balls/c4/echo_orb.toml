@@ -1,0 +1,12 @@
+id = "balls/c4/echo_orb"
+name = "Echo Orb"
+family = "ball_families/splitter"
+rarity = "Rare"
+description = "C4 variant tuned for splitter ball routing and combo experiments."
+effects = ["effects/ball/echo_orb"]
+
+[stats]
+radius = 0.22
+mass = 1.0
+launch_speed_multiplier = 1.0
+restitution_multiplier = 1.0

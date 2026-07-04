@@ -1,0 +1,7 @@
+id = "relics/act3/merchant_oath"
+name = "Merchant Oath"
+category = "EconomyCombo"
+rarity = "Uncommon"
+act = 3
+description = "C4 Merchant Oath relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/merchant_oath"]

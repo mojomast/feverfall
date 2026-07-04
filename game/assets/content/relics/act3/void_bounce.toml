@@ -1,0 +1,7 @@
+id = "relics/act3/void_bounce"
+name = "Void Bounce"
+category = "Ball"
+rarity = "Rare"
+act = 3
+description = "C4 Void Bounce relic expands Ball run identity for later acts."
+effects = ["effects/ball/void_bounce"]

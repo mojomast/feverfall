@@ -1,0 +1,7 @@
+id = "relics/act2/curse_dividend"
+name = "Curse Dividend"
+category = "EconomyCombo"
+rarity = "Uncommon"
+act = 2
+description = "C4 Curse Dividend relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/curse_dividend"]

@@ -39,5 +39,11 @@
     { "id": "obstacle/rotating_row_scripted", "kind": "Stone", "shape": { "Rect": { "center": { "x": 10.0, "y": 20.5 }, "half_extents": { "x": 3.0, "y": 0.24 } } } }
   ],
   "bucket": { "center": { "x": 10.0, "y": 34.4 }, "width": 3.6, "height": 0.55, "horizontal_speed": 6.0, "motion": "Scripted", "catch_margin": 0.18 },
-  "tags": ["rpg_ch1", "boss", "fortress_stone", "scripted_rotating_obstacle_row"]
+  "tags": ["rpg_ch1", "boss", "fortress_stone", "scripted_rotating_obstacle_row"],
+  "boss_mechanic": {
+    "kind": "FeverDrain",
+    "intensity": 2,
+    "cadence_shots": 2,
+    "parameters": ["mechanics/fever_drain"]
+  }
 }

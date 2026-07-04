@@ -1,0 +1,7 @@
+id = "relics/act2/lane_switch"
+name = "Lane Switch"
+category = "Board"
+rarity = "Rare"
+act = 2
+description = "C4 Lane Switch relic expands Board run identity for later acts."
+effects = ["effects/board/lane_switch"]

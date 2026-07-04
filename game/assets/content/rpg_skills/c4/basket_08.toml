@@ -1,0 +1,8 @@
+id = "skills/c4/basket_08"
+name = "Basket 08"
+tree = "skill_trees/basket"
+max_rank = 3
+unlock_level = 3
+timing = "ShotEnd"
+description = "C4 basket skill rank line for campaign build variety."
+effects = ["effects/skills/basket_08"]

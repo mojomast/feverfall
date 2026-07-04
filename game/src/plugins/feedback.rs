@@ -1,4 +1,4 @@
-use content_schema::{BoardDefinition, PegId, PegKind, Score, Vec2};
+use content_schema::{BoardDefinition, PegId, PegKind, RelicCategory, Score, Vec2};
 use feedback_events::{AccessibilityFeedbackFlags, FeedbackEvent, FeedbackKind};
 use physics_core::{PhysicsEvent, ShotInput, ShotResult};
 
@@ -47,6 +47,7 @@ pub fn play_shot_feedback(
     let events = feedback_events_for_shot_result(board, result);
     let mut vfx = MockVfxPlaybackState::new(accessibility);
     let mut audio = MockAudioPlaybackState::new(accessibility);
+    audio.play_board_hum(board_ambient_intensity(board));
     let mut summaries = Vec::new();
 
     for event in &events {
@@ -62,6 +63,7 @@ pub fn play_shot_feedback(
             audio_cues: audio.emitted.len() - audio_before,
         });
     }
+    vfx.reset_for_shot_end();
 
     FeelTestFeedbackPlayback {
         events,
@@ -86,6 +88,15 @@ pub fn feedback_events_for_shot_result(
     let mut caught_bucket = false;
     let mut exited_board = false;
     let mut long_shot_reported = false;
+    let mut obstacle_touched = false;
+
+    events.push(FeedbackEvent {
+        kind: FeedbackKind::BallLaunch,
+        intensity: 0.4,
+        position: board.cannon_position,
+        combo: 0,
+        value: 0,
+    });
 
     for event in &result.events {
         match event {
@@ -129,6 +140,15 @@ pub fn feedback_events_for_shot_result(
             }
             PhysicsEvent::BallEnteredBucket { .. } => {
                 caught_bucket = true;
+                if obstacle_touched {
+                    events.push(FeedbackEvent {
+                        kind: FeedbackKind::LuckyBounce,
+                        intensity: 0.75,
+                        position: board.bucket.center,
+                        combo,
+                        value: 5_000,
+                    });
+                }
                 events.push(FeedbackEvent {
                     kind: FeedbackKind::BucketCatch,
                     intensity: 0.8,
@@ -144,7 +164,9 @@ pub fn feedback_events_for_shot_result(
                 caught_bucket |= summary.caught_bucket;
                 exited_board |= summary.exited_board;
             }
-            PhysicsEvent::BallHitObstacle { .. } => {}
+            PhysicsEvent::BallHitObstacle { .. } => {
+                obstacle_touched = true;
+            }
         }
     }
 
@@ -171,8 +193,13 @@ pub fn feedback_events_for_shot_result(
 }
 
 pub fn c3_feedback_trigger_coverage() -> Vec<FeedbackTriggerCoverage> {
+    c4_feedback_trigger_coverage()
+}
+
+pub fn c4_feedback_trigger_coverage() -> Vec<FeedbackTriggerCoverage> {
     let position = Vec2::new(10.0, 18.0);
     vec![
+        coverage("ball_launch", FeedbackKind::BallLaunch, 0.4, 0, 0),
         coverage("blue_peg_hit", FeedbackKind::PegHit, 0.35, 1, 100),
         coverage("orange_peg_hit", FeedbackKind::OrangeHit, 0.65, 1, 1_000),
         coverage("purple_peg_hit", FeedbackKind::PurpleHit, 0.8, 1, 5_000),
@@ -182,7 +209,8 @@ pub fn c3_feedback_trigger_coverage() -> Vec<FeedbackTriggerCoverage> {
         coverage("combo_6", FeedbackKind::ComboThreshold, 0.65, 6, 0),
         coverage("combo_10", FeedbackKind::ComboThreshold, 0.75, 10, 0),
         coverage("combo_15_plus", FeedbackKind::ComboThreshold, 0.85, 15, 0),
-        coverage("long_shot", FeedbackKind::ComboThreshold, 0.7, 1, 750),
+        coverage("long_shot", FeedbackKind::LongShot, 0.7, 1, 750),
+        coverage("lucky_bounce", FeedbackKind::LuckyBounce, 0.75, 3, 5_000),
         coverage("near_miss", FeedbackKind::NearBucketMiss, 0.2, 0, 0),
         coverage(
             "last_orange_in_flight",
@@ -192,6 +220,29 @@ pub fn c3_feedback_trigger_coverage() -> Vec<FeedbackTriggerCoverage> {
             0,
         ),
         coverage("extreme_fever", FeedbackKind::ExtremeFever, 1.0, 5, 50_000),
+        coverage("relic_ball_flash", FeedbackKind::RelicTriggered, 0.65, 0, 1),
+        coverage("relic_peg_flash", FeedbackKind::RelicTriggered, 0.65, 0, 2),
+        coverage(
+            "relic_basket_flash",
+            FeedbackKind::RelicTriggered,
+            0.65,
+            0,
+            3,
+        ),
+        coverage(
+            "relic_board_flash",
+            FeedbackKind::RelicTriggered,
+            0.65,
+            0,
+            4,
+        ),
+        coverage(
+            "relic_economy_flash",
+            FeedbackKind::RelicTriggered,
+            0.65,
+            0,
+            5,
+        ),
         coverage("board_failure", FeedbackKind::Loss, 0.2, 0, 0),
     ]
     .into_iter()
@@ -204,12 +255,29 @@ pub fn c3_feedback_trigger_coverage() -> Vec<FeedbackTriggerCoverage> {
 
 pub fn c3_feedback_trigger_summary() -> String {
     let coverage = c3_feedback_trigger_coverage();
+    let mut vfx = MockVfxPlaybackState::new(AccessibilityFeedbackFlags::DEFAULT);
+    for item in &coverage {
+        if let Some(category) = relic_category_for_coverage(item.event.value) {
+            vfx.play_relic_trigger(category, &item.event);
+        }
+    }
     let labels = coverage
         .iter()
         .map(|item| item.trigger)
         .collect::<Vec<_>>()
         .join(",");
-    format!("c3_vfx_triggers={} [{}]", coverage.len(), labels)
+    format!("c4_vfx_triggers={} [{}]", coverage.len(), labels)
+}
+
+pub fn relic_category_for_coverage(value: Score) -> Option<RelicCategory> {
+    match value {
+        1 => Some(RelicCategory::Ball),
+        2 => Some(RelicCategory::Peg),
+        3 => Some(RelicCategory::Basket),
+        4 => Some(RelicCategory::Board),
+        5 => Some(RelicCategory::EconomyCombo),
+        _ => None,
+    }
 }
 
 fn peg_kind<'a>(board: &'a BoardDefinition, peg: &PegId) -> Option<&'a PegKind> {
@@ -268,11 +336,19 @@ fn is_long_shot(board: &BoardDefinition, position: Vec2) -> bool {
 
 fn long_shot_feedback(position: Vec2, combo: u32) -> FeedbackEvent {
     FeedbackEvent {
-        kind: FeedbackKind::ComboThreshold,
+        kind: FeedbackKind::LongShot,
         intensity: 0.7,
         position,
         combo,
         value: 750,
+    }
+}
+
+fn board_ambient_intensity(board: &BoardDefinition) -> f32 {
+    if board.tags.iter().any(|tag| tag.as_str().contains("boss")) {
+        0.32
+    } else {
+        0.22
     }
 }
 
@@ -317,6 +393,7 @@ mod tests {
             bucket: BasketDef::spec_default(),
             tags: Vec::new(),
             objectives: Vec::new(),
+            boss_mechanic: None,
         }
     }
 
@@ -384,13 +461,14 @@ mod tests {
         assert_eq!(
             kinds,
             vec![
+                FeedbackKind::BallLaunch,
                 FeedbackKind::PegHit,
                 FeedbackKind::OrangeHit,
                 FeedbackKind::ExtremeFever,
                 FeedbackKind::BucketCatch
             ]
         );
-        assert_eq!(playback.summaries.len(), 4);
+        assert_eq!(playback.summaries.len(), 5);
         assert!(playback
             .summaries
             .iter()
@@ -414,9 +492,9 @@ mod tests {
 
         let playback = play_shot_feedback(&board, &result, AccessibilityFeedbackFlags::DEFAULT);
 
-        assert_eq!(playback.events.len(), 1);
-        assert_eq!(playback.events[0].kind, FeedbackKind::Loss);
-        assert!(playback.events[0].intensity <= 0.2);
+        assert_eq!(playback.events.len(), 2);
+        assert_eq!(playback.events[1].kind, FeedbackKind::Loss);
+        assert!(playback.events[1].intensity <= 0.2);
         assert!(playback.vfx.emitted.iter().all(|cue| !matches!(
             cue.layer,
             crate::plugins::vfx::VfxLayer::RewardRing
@@ -490,14 +568,15 @@ mod tests {
     }
 
     #[test]
-    fn c3_trigger_coverage_maps_all_required_feedback_without_new_fields() {
-        let coverage = c3_feedback_trigger_coverage();
+    fn c4_trigger_coverage_maps_all_required_feedback_without_new_fields() {
+        let coverage = c4_feedback_trigger_coverage();
         let labels = coverage
             .iter()
             .map(|item| item.trigger)
             .collect::<std::collections::HashSet<_>>();
 
         for required in [
+            "ball_launch",
             "blue_peg_hit",
             "orange_peg_hit",
             "purple_peg_hit",
@@ -508,18 +587,28 @@ mod tests {
             "combo_10",
             "combo_15_plus",
             "long_shot",
+            "lucky_bounce",
             "near_miss",
             "last_orange_in_flight",
             "extreme_fever",
+            "relic_ball_flash",
+            "relic_peg_flash",
+            "relic_basket_flash",
+            "relic_board_flash",
+            "relic_economy_flash",
             "board_failure",
         ] {
-            assert!(labels.contains(required), "missing C3 trigger {required}");
+            assert!(labels.contains(required), "missing C4 trigger {required}");
         }
 
         let mut vfx = MockVfxPlaybackState::new(AccessibilityFeedbackFlags::DEFAULT);
         let mut audio = MockAudioPlaybackState::new(AccessibilityFeedbackFlags::DEFAULT);
         for item in &coverage {
-            vfx.play_event(&item.event);
+            if let Some(category) = relic_category_for_coverage(item.event.value) {
+                vfx.play_relic_trigger(category, &item.event);
+            } else {
+                vfx.play_event(&item.event);
+            }
             audio.play_event(&item.event);
         }
         assert!(!vfx.emitted.is_empty());

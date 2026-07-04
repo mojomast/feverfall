@@ -1,0 +1,12 @@
+id = "balls/c4/lead_orb"
+name = "Lead Orb"
+family = "ball_families/heavy"
+rarity = "Uncommon"
+description = "C4 variant tuned for heavy ball routing and combo experiments."
+effects = ["effects/ball/lead_orb"]
+
+[stats]
+radius = 0.27
+mass = 1.65
+launch_speed_multiplier = 0.88
+restitution_multiplier = 0.86

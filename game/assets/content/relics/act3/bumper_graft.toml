@@ -1,0 +1,7 @@
+id = "relics/act3/bumper_graft"
+name = "Bumper Graft"
+category = "Board"
+rarity = "Uncommon"
+act = 3
+description = "C4 Bumper Graft relic expands Board run identity for later acts."
+effects = ["effects/board/bumper_graft"]

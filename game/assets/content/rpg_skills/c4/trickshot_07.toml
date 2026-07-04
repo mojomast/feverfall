@@ -1,0 +1,8 @@
+id = "skills/c4/trickshot_07"
+name = "Trickshot 07"
+tree = "skill_trees/trickshot"
+max_rank = 3
+unlock_level = 3
+timing = "BeforeShot"
+description = "C4 trickshot skill rank line for campaign build variety."
+effects = ["effects/skills/trickshot_07"]

@@ -1,0 +1,7 @@
+id = "relics/act3/freefall_net"
+name = "Freefall Net"
+category = "Basket"
+rarity = "Rare"
+act = 3
+description = "C4 Freefall Net relic expands Basket run identity for later acts."
+effects = ["effects/basket/freefall_net"]

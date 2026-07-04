@@ -1,0 +1,7 @@
+id = "relics/act3/bomb_needle"
+name = "Bomb Needle"
+category = "Peg"
+rarity = "Common"
+act = 3
+description = "C4 Bomb Needle relic expands Peg run identity for later acts."
+effects = ["effects/peg/bomb_needle"]

@@ -1,0 +1,7 @@
+id = "relics/act3/jackpot_seed"
+name = "Jackpot Seed"
+category = "EconomyCombo"
+rarity = "Rare"
+act = 3
+description = "C4 Jackpot Seed relic expands EconomyCombo run identity for later acts."
+effects = ["effects/economy_combo/jackpot_seed"]

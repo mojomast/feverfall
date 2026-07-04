@@ -1,16 +1,19 @@
 # Local Validation
 
-Full Checkpoint 2 automated validation commands:
+Full Checkpoint 4 release validation commands:
 
 ```bash
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+cargo run -p feverfall_game -- --smoke-full
 cargo run -p replay_runner
 cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json
 cargo run -p replay_runner -- --replay tests/golden_replays/act1_twobboard_run.replay.json
 cargo run -p replay_runner -- --replay tests/golden_replays/rpg_chapter1_smoke.replay.json
+cargo run -p replay_runner -- --replay tests/golden_replays/rpg_ch1_smoke.replay.json
 cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_3act_smoke.replay.json
+cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_act1to3_smoke.replay.json
 cargo run -p content_linter
 cargo run -p board_validator
 cargo run -p seed_browser -- --mode rpg --chapter 1 --archetype fan --count 3
@@ -22,7 +25,7 @@ cargo clippy -p feverfall_game --features bevy_feel_test --all-targets -- -D war
 cargo run -p feverfall_game --features bevy_feel_test -- --smoke
 ```
 
-Current Checkpoint 2 expected outputs:
+Current Checkpoint 4 expected outputs:
 
 - Toolchain: Rust 1.95.0 via `rust-toolchain.toml`.
 - Optional Bevy feel-test dependency: Bevy 0.19.
@@ -31,15 +34,21 @@ Current Checkpoint 2 expected outputs:
 - Act 1 two-board replay hash: `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`.
 - RPG Chapter 1 smoke replay hash: `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`.
 - Roguelite 3-act smoke replay hash: `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`.
-- Default smoke run summary hash: `0b36add9e9b3283c`.
+- RPG Chapter 1 implementation smoke replay hash: `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`.
+- Roguelite Act 1-3 implementation smoke replay hash: `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+- C2 run summary hash: `18202124e6b686d8`.
+- RPG Chapter 1 summary hash: `3364e243ba2065f4`.
+- RPG campaign summary hash: `04029810211125c5`.
+- Roguelite Act 1-3 summary hash: `e72374145338c3b3`.
+- Roguelite Acts 1-4 full-run summary hash: `152fc850303d8356`.
 - Bevy feel-test smoke hash: `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
-- `cargo run -p content_linter` currently reports `content lint passed: 58 unique id(s)` with C3 RPG content and top-level balance tables present.
+- `cargo run -p content_linter` currently reports `content lint passed: 242 unique id(s)` with C4 content present.
 - `cargo run -p board_validator` includes `PASS boards/act1_boss_01`.
 
-Checkpoint 2 status note:
+Checkpoint 4 status note:
 
-- Automated C2 gates are passing.
-- Human interactive-flow confirmation remains the exit criterion before Checkpoint 2 can be marked complete.
+- `cargo run -p feverfall_game -- --smoke-full` is the release gate: exit code 0 means all built-in smoke segments ran, all golden replay hashes matched, and content/board validation passed.
+- Windows artifact production is nonlocal and must be verified by GitHub Actions from a pushed ref containing the C4 workflow update.
 
 Playable Bevy feel-test scene:
 

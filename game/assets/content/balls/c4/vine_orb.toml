@@ -1,0 +1,12 @@
+id = "balls/c4/vine_orb"
+name = "Vine Orb"
+family = "ball_families/magnet"
+rarity = "Uncommon"
+description = "C4 variant tuned for magnet ball routing and combo experiments."
+effects = ["effects/ball/vine_orb"]
+
+[stats]
+radius = 0.23
+mass = 1.1
+launch_speed_multiplier = 0.98
+restitution_multiplier = 0.96

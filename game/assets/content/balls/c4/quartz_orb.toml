@@ -1,0 +1,12 @@
+id = "balls/c4/quartz_orb"
+name = "Quartz Orb"
+family = "ball_families/glass"
+rarity = "Uncommon"
+description = "C4 variant tuned for glass ball routing and combo experiments."
+effects = ["effects/ball/quartz_orb"]
+
+[stats]
+radius = 0.2
+mass = 0.8
+launch_speed_multiplier = 1.08
+restitution_multiplier = 1.08

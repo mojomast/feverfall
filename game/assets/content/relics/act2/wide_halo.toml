@@ -1,0 +1,7 @@
+id = "relics/act2/wide_halo"
+name = "Wide Halo"
+category = "Basket"
+rarity = "Common"
+act = 2
+description = "C4 Wide Halo relic expands Basket run identity for later acts."
+effects = ["effects/basket/wide_halo"]

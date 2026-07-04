@@ -173,6 +173,19 @@ fn lint_board(
             ));
         }
     }
+    if board.tags.iter().any(|tag| tag.as_str() == "boss") && board.boss_mechanic.is_none() {
+        errors.push(format!("{source} boss board requires boss_mechanic"));
+    }
+    if let Some(mechanic) = &board.boss_mechanic {
+        if mechanic.intensity == 0 || mechanic.cadence_shots == 0 {
+            errors.push(format!(
+                "{source} boss_mechanic intensity and cadence_shots must be positive"
+            ));
+        }
+        for parameter in &mechanic.parameters {
+            lint_reference_id(parameter.as_str(), source, errors);
+        }
+    }
 }
 
 fn lint_relic(
