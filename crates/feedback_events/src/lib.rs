@@ -22,6 +22,7 @@ pub enum FeedbackKind {
     ComboThreshold,
     FinalOrangeTension,
     ExtremeFever,
+    RelicTriggered,
     Loss,
 }
 
@@ -69,6 +70,13 @@ pub fn map_game_event(event: &GameEvent) -> Option<FeedbackEvent> {
             position: Vec2::ZERO,
             combo: 0,
             value: *points,
+        }),
+        GameEvent::RelicTriggered { .. } => Some(FeedbackEvent {
+            kind: FeedbackKind::RelicTriggered,
+            intensity: 0.65,
+            position: Vec2::ZERO,
+            combo: 0,
+            value: 0,
         }),
         _ => None,
     }

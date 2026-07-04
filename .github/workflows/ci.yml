@@ -24,11 +24,21 @@ jobs:
         run: cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json
       - name: Act 1 two-board smoke replay gate
         run: cargo run -p replay_runner -- --replay tests/golden_replays/act1_twobboard_run.replay.json
+      - name: RPG Chapter 1 smoke replay gate
+        run: cargo run -p replay_runner -- --replay tests/golden_replays/rpg_chapter1_smoke.replay.json
+      - name: Roguelite 3-act smoke replay gate
+        run: cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_3act_smoke.replay.json
       - name: Board validation
         run: cargo run -p board_validator
       - name: Content lint
         run: cargo run -p content_linter
       - name: Seed browser smoke
         run: cargo run -p seed_browser -- --act 1 --archetype fan --count 3
+      - name: RPG Chapter 1 seed browser smoke
+        run: cargo run -p seed_browser -- --mode rpg --chapter 1 --archetype fan --count 3
       - name: Game smoke test
-        run: cargo run -p feverfall_game
+        run: cargo run -p feverfall_game -- --smoke
+      - name: RPG Chapter 1 game smoke
+        run: cargo run -p feverfall_game -- --smoke --mode rpg --chapter 1
+      - name: Roguelite 3-act game smoke
+        run: cargo run -p feverfall_game -- --smoke --mode roguelite --acts 3

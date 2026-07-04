@@ -1,0 +1,45 @@
+{
+  "name": "rpg_chapter1_smoke",
+  "mode": "rpg_campaign_chapter1_smoke",
+  "seed": 14627333968358193854,
+  "board_path": "game/assets/content/boards/feel_fan_01.json",
+  "character_state": {
+    "character_id": "characters/ember",
+    "level": 1,
+    "xp": 0,
+    "stats": {
+      "aim_control": 2,
+      "bucket_control": 2,
+      "combo_focus": 1,
+      "skill_charge": 1,
+      "resilience": 2
+    },
+    "gear": [
+      {
+        "slot": "Launcher",
+        "item": "gear/act1/starter_launcher"
+      },
+      {
+        "slot": "CoreBall",
+        "item": "gear/act1/basic_core"
+      }
+    ],
+    "unlocked_skills": [
+      {
+        "id": "skills/act1/steady_shot",
+        "rank": 1,
+        "equipped": true
+      }
+    ],
+    "campaign_flags": ["campaign/act1_slice_unlocked"]
+  },
+  "shots": [
+    {
+      "aim_angle_radians": 1.4835298641951802,
+      "launch_speed": 17.5,
+      "ball_id": "balls/basic"
+    }
+  ],
+  "expected_hash": "8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f",
+  "pending_simulator": false
+}

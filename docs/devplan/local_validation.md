@@ -9,9 +9,14 @@ cargo test --workspace
 cargo run -p replay_runner
 cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json
 cargo run -p replay_runner -- --replay tests/golden_replays/act1_twobboard_run.replay.json
+cargo run -p replay_runner -- --replay tests/golden_replays/rpg_chapter1_smoke.replay.json
+cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_3act_smoke.replay.json
 cargo run -p content_linter
 cargo run -p board_validator
+cargo run -p seed_browser -- --mode rpg --chapter 1 --archetype fan --count 3
 cargo run -p feverfall_game -- --smoke
+cargo run -p feverfall_game -- --smoke --mode rpg --chapter 1
+cargo run -p feverfall_game -- --smoke --mode roguelite --acts 3
 cargo check -p feverfall_game --features bevy_feel_test
 cargo clippy -p feverfall_game --features bevy_feel_test --all-targets -- -D warnings
 cargo run -p feverfall_game --features bevy_feel_test -- --smoke
@@ -24,9 +29,11 @@ Current Checkpoint 2 expected outputs:
 - Default replay hash: `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`.
 - Vertical-slice replay hash: `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`.
 - Act 1 two-board replay hash: `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`.
+- RPG Chapter 1 smoke replay hash: `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`.
+- Roguelite 3-act smoke replay hash: `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`.
 - Default smoke run summary hash: `0b36add9e9b3283c`.
 - Bevy feel-test smoke hash: `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
-- `cargo run -p content_linter` reports `content lint passed: 44 unique id(s)`.
+- `cargo run -p content_linter` currently reports `content lint passed: 58 unique id(s)` with C3 RPG content and top-level balance tables present.
 - `cargo run -p board_validator` includes `PASS boards/act1_boss_01`.
 
 Checkpoint 2 status note:
@@ -67,11 +74,14 @@ Checkpoint 1 tooling notes:
 - `replay_runner` reads `tests/golden_replays/minimal_test.replay.json` by default, or `--replay FILE`. It uses shared `BoardDefinition` and `ShotInput` schemas, runs `physics_core::simulate_shot`, emits a deterministic replay hash, and compares it with `expected_hash`. Fixtures can temporarily set `pending_simulator: true` with no `expected_hash` only if simulator integration regresses or changes API.
 - `tests/golden_replays/vertical_slice_feel_fan.replay.json` is the Checkpoint 2 vertical-slice smoke replay. It references the authored `game/assets/content/boards/feel_fan_01.json` board instead of duplicating board data and uses the same deterministic seed, launch speed, and two-step-left aim as the non-interactive feel-test smoke scene.
 - `tests/golden_replays/act1_twobboard_run.replay.json` is the Act 1 two-board smoke fixture. It uses the replay runner's ordered `boards` fixture format to simulate one scripted shot on `feel_fan_01` and one scripted shot on `feel_wave_01`, then verifies hash `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`.
+- `tests/golden_replays/rpg_chapter1_smoke.replay.json` is the defensive C3 RPG campaign fixture. It references a board by `board_path`, includes an `rpg_mode::CharacterState` snapshot, simulates one scripted shot, and verifies hash `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`.
+- `tests/golden_replays/roguelite_3act_smoke.replay.json` is the defensive C3 roguelite 3-act smoke fixture. It uses the ordered `boards` replay format with three authored boards and verifies hash `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`.
 - `cargo run -p feverfall_game -- --smoke` is the integrated C2 smoke path for node progression, reward application, UI summaries, telemetry/run summary shape, and smoke run summary hash `0b36add9e9b3283c`.
+- `cargo run -p feverfall_game -- --smoke --mode rpg --chapter 1` and `cargo run -p feverfall_game -- --smoke --mode roguelite --acts 3` are C3 defensive smoke commands. Current runtime code safely falls through to the generic smoke path until mode-specific feature code lands.
 - `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` preserves the non-interactive Bevy-feature smoke path and verifies feel-test smoke hash `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
 - CI runs the replay hash gate unconditionally. Stricter changed-file gating for physics/content/rules-only replay enforcement is a next step.
 - `board_validator` reads JSON boards from `game/assets/content/boards`, falling back to `minimal_test_board` when no board files exist.
-- `content_linter` walks `game/assets/content`, validates board JSON plus relic, ball, and shop TOML schemas/content ID conventions, and reports duplicate IDs. Current C2 content reports 44 unique IDs.
-- `seed_browser` accepts `--act`, `--archetype`, `--count`, and `--seed-start`/`--seed`.
+- `content_linter` walks `game/assets/content` and top-level `content`, validates board JSON plus relic, ball, shop, RPG gear, RPG skill, and balance table content/schema ID conventions, and reports duplicate IDs. Current C3 content reports 58 unique IDs.
+- `seed_browser` accepts `--mode`, `--act`, `--chapter`, `--archetype`, `--count`, and `--seed-start`/`--seed`. Use `cargo run -p seed_browser -- --mode rpg --chapter 1 --archetype fan --count 3` to generate and validate RPG Chapter 1 objective-tagged boards.
 - `telemetry::JsonlTelemetryLogger` records local JSONL playtest events from copied event data only. It is validated by a workspace test that logs a shot and re-runs the same shot with the same replay hash.
 - QA playtest artifacts live in `docs/playtesting/feel_survey.md` and `docs/qa/`. Use the determinism checklist before accepting physics, replay, or telemetry changes.

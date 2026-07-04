@@ -1,0 +1,6 @@
+{
+  "id": "skills/rpg_ch1/zen_reroute",
+  "name": "Zen Reroute",
+  "cooldown_boards": 1,
+  "description": "Once per board, offer an improved aim angle during a shot."
+}

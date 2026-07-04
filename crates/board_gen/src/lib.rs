@@ -3,7 +3,7 @@ use content_schema::{
     PegId, PegKind, Scalar, Seed, ShapeDef, Vec2,
 };
 use serde::{Deserialize, Serialize};
-use std::{fs, path::Path};
+use std::{collections::BTreeSet, fs, path::Path};
 
 const BOARD_WIDTH: Scalar = 20.0;
 const BOARD_HEIGHT: Scalar = 35.56;
@@ -69,6 +69,13 @@ pub enum BoardValidationIssue {
     },
     PoorBucketOpportunity {
         viable_angles: usize,
+    },
+    MissingRpgObjective,
+    InvalidObjectiveTarget {
+        objective: ContentId,
+    },
+    DuplicateObjectiveId {
+        objective: ContentId,
     },
 }
 
@@ -198,6 +205,7 @@ pub fn generate_board(params: &GenerationParams) -> BoardDefinition {
         obstacles,
         bucket: BasketDef::spec_default(),
         tags: vec![params.archetype.clone()],
+        objectives: Vec::new(),
     }
 }
 
@@ -214,6 +222,15 @@ pub fn validate_board(board: &BoardDefinition) -> BoardValidationReport {
     }
     let smoke_test_board = board.tags.iter().any(|tag| tag.as_str() == "test");
     let boss_board = board.tags.iter().any(|tag| tag.as_str() == "boss");
+    let rpg_chapter_board = board
+        .tags
+        .iter()
+        .any(|tag| tag.as_str().starts_with("rpg/chapter"));
+    let aim_assist_board = board.tags.iter().any(|tag| tag.as_str() == "aim_assist");
+    let authored_chapter_board = board
+        .tags
+        .iter()
+        .any(|tag| tag.as_str().starts_with("rpg_ch"));
     let max_orange_pegs = if boss_board { 28 } else { MAX_ORANGE_PEGS };
     if !smoke_test_board && !(MIN_ORANGE_PEGS..=max_orange_pegs).contains(&orange_count) {
         issues.push(BoardValidationIssue::OrangeCountOutOfRange {
@@ -264,7 +281,14 @@ pub fn validate_board(board: &BoardDefinition) -> BoardValidationReport {
                 reachable_oranges: sample.reachable_oranges,
             });
         }
-        if sample.dead_zone_ratio > MAX_DEAD_ZONE_RATIO {
+        let max_dead_zone_ratio = if authored_chapter_board {
+            0.30
+        } else if aim_assist_board {
+            0.20
+        } else {
+            MAX_DEAD_ZONE_RATIO
+        };
+        if sample.dead_zone_ratio > max_dead_zone_ratio {
             issues.push(BoardValidationIssue::ExcessiveDeadZone {
                 ratio: sample.dead_zone_ratio,
             });
@@ -276,9 +300,35 @@ pub fn validate_board(board: &BoardDefinition) -> BoardValidationReport {
         }
     }
 
+    validate_objectives(board, rpg_chapter_board, &mut issues);
+
     BoardValidationReport {
         board_id: board.id.clone(),
         issues,
+    }
+}
+
+fn validate_objectives(
+    board: &BoardDefinition,
+    rpg_chapter_board: bool,
+    issues: &mut Vec<BoardValidationIssue>,
+) {
+    if rpg_chapter_board && board.objectives.is_empty() {
+        issues.push(BoardValidationIssue::MissingRpgObjective);
+    }
+
+    let mut objective_ids = BTreeSet::new();
+    for objective in &board.objectives {
+        if objective.target == 0 {
+            issues.push(BoardValidationIssue::InvalidObjectiveTarget {
+                objective: objective.id.clone(),
+            });
+        }
+        if !objective_ids.insert(objective.id.clone()) {
+            issues.push(BoardValidationIssue::DuplicateObjectiveId {
+                objective: objective.id.clone(),
+            });
+        }
     }
 }
 

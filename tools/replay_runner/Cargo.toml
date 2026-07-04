@@ -10,5 +10,6 @@ anyhow.workspace = true
 content_schema = { path = "../../crates/content_schema" }
 game_rules = { path = "../../crates/game_rules" }
 physics_core = { path = "../../crates/physics_core" }
+rpg_mode = { path = "../../crates/rpg_mode" }
 serde.workspace = true
 serde_json.workspace = true

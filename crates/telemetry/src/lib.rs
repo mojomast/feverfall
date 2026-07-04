@@ -302,7 +302,7 @@ mod tests {
             .unwrap();
         logger
             .log(TelemetryEvent::RelicChosen {
-                relic: RelicId::new("relics/act1/orange_echo").unwrap(),
+                relic: RelicId::new("relics/act1/orange_lacquer").unwrap(),
             })
             .unwrap();
         logger
@@ -386,7 +386,7 @@ mod tests {
             boards_cleared: 2,
             oranges_cleared: 25,
             bucket_catches: 4,
-            relics_collected: vec![RelicId::new("relics/act1/spark_catcher").unwrap()],
+            relics_collected: vec![RelicId::new("relics/act1/wide_cup_rim").unwrap()],
             xp_gained: 18,
             character_level: 3,
             run_duration_shots: 11,
@@ -399,7 +399,7 @@ mod tests {
         assert_eq!(parsed, event);
         assert!(json.contains("RunEnded"));
         assert!(json.contains("final_score"));
-        assert!(json.contains("relics/act1/spark_catcher"));
+        assert!(json.contains("relics/act1/wide_cup_rim"));
         assert!(json.contains("run_duration_shots"));
     }
 }

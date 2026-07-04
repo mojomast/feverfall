@@ -33,6 +33,9 @@ pub fn register() -> UiRegistrationSummary {
         id: SkillId::new("skills/zen_reroute").expect("static id is valid"),
         rank: 1,
         equipped: true,
+        cooldown_boards: 0,
+        cooldown_remaining: 0,
+        used_this_board: false,
     });
 
     let mut hud =
@@ -538,6 +541,9 @@ mod tests {
             id: SkillId::new("skills/zen_reroute").unwrap(),
             rank: 1,
             equipped: true,
+            cooldown_boards: 0,
+            cooldown_remaining: 0,
+            used_this_board: false,
         });
 
         let hud =
@@ -591,7 +597,7 @@ mod tests {
         run_state.advance_to_node(nodes[2].clone());
         run_state.apply_reward(&run_mode::Reward::Coins(12));
         run_state.apply_reward(&run_mode::Reward::Relic(
-            RelicId::new("relics/act1/orange_echo").unwrap(),
+            RelicId::new("relics/act1/orange_lacquer").unwrap(),
         ));
         run_state.apply_reward(&run_mode::Reward::Ball(BallId::new("balls/spark").unwrap()));
         run_state.resources.shots = 6;

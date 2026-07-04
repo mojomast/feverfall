@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Context, Result};
 use content_schema::BoardDefinition;
 use physics_core::{PhysicsEvent, ShotInput};
+use rpg_mode::CharacterState;
 use serde::Deserialize;
 use std::{env, fs, path::PathBuf};
 
@@ -17,6 +18,8 @@ struct ReplayFixture {
     #[serde(default)]
     mode: Option<String>,
     #[serde(default)]
+    character_state: Option<CharacterState>,
+    #[serde(default)]
     shots: Vec<ShotInput>,
     expected_hash: Option<String>,
     #[serde(default)]
@@ -26,6 +29,8 @@ struct ReplayFixture {
 #[derive(Debug, Deserialize)]
 struct ReplayBoardFixture {
     board_path: PathBuf,
+    #[serde(default)]
+    character_state: Option<CharacterState>,
     shots: Vec<ShotInput>,
 }
 
@@ -35,10 +40,11 @@ fn main() -> Result<()> {
     let replay = run_replay(&fixture)?;
     let events = replay.events;
     let replay_hash = physics_core::stable_hash_events(&events);
+    let character_snapshots = fixture.character_snapshot_count();
 
     println!(
-        "replay {} boards={} shots={} hash={replay_hash}",
-        fixture.name, replay.board_count, replay.shot_count
+        "replay {} boards={} shots={} character_snapshots={} hash={replay_hash}",
+        fixture.name, replay.board_count, replay.shot_count, character_snapshots
     );
     println!(
         "rules={} physics={} mode={}",
@@ -68,6 +74,19 @@ fn main() -> Result<()> {
             "{} has no expected_hash and is not marked pending_simulator",
             path.display()
         )),
+    }
+}
+
+impl ReplayFixture {
+    fn character_snapshot_count(&self) -> usize {
+        usize::from(self.character_state.is_some())
+            + self
+                .boards
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .filter(|board| board.character_state.is_some())
+                .count()
     }
 }
 

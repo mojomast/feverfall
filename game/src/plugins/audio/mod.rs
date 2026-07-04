@@ -118,6 +118,13 @@ impl MockAudioPlaybackState {
                 intensity,
                 true,
             ),
+            FeedbackKind::RelicTriggered => self.emit(
+                event.kind,
+                AudioBus::RewardStingers,
+                AudioLayer::RisingArpeggio,
+                intensity,
+                false,
+            ),
             FeedbackKind::BucketCatch => self.emit(
                 event.kind,
                 AudioBus::RewardStingers,
@@ -215,6 +222,7 @@ fn ethical_intensity(kind: FeedbackKind, requested: f32) -> f32 {
         FeedbackKind::OrangeHit
         | FeedbackKind::PurpleHit
         | FeedbackKind::GreenHit
+        | FeedbackKind::RelicTriggered
         | FeedbackKind::BucketCatch
         | FeedbackKind::ComboThreshold => 0.85,
         FeedbackKind::ExtremeFever => 1.0,

@@ -40,6 +40,8 @@ pub enum VfxLayer {
     ComboRail,
     NearMissMarker,
     FinalOrangeSpotlight,
+    ScalePulse,
+    Bloom,
     CameraShake,
     FeverFreezeFrame,
     FeverConfetti,
@@ -71,21 +73,29 @@ impl MockVfxPlaybackState {
             FeedbackKind::OrangeHit => {
                 self.emit(event.kind, VfxLayer::PegFlash, intensity);
                 self.emit(event.kind, VfxLayer::RewardRing, intensity);
+                self.emit(event.kind, VfxLayer::ScalePulse, intensity);
                 self.emit(event.kind, VfxLayer::BurstParticles, intensity);
                 self.emit(event.kind, VfxLayer::CameraShake, intensity);
             }
             FeedbackKind::PurpleHit => {
                 self.emit(event.kind, VfxLayer::RewardRing, intensity);
                 self.emit(event.kind, VfxLayer::ScoreBeam, intensity);
+                self.emit(event.kind, VfxLayer::Bloom, intensity);
                 self.emit(event.kind, VfxLayer::BurstParticles, intensity);
             }
             FeedbackKind::GreenHit => {
                 self.emit(event.kind, VfxLayer::PowerRing, intensity);
+                self.emit(event.kind, VfxLayer::ScalePulse, intensity);
                 self.emit(event.kind, VfxLayer::BurstParticles, intensity);
+            }
+            FeedbackKind::RelicTriggered => {
+                self.emit(event.kind, VfxLayer::PowerRing, intensity);
+                self.emit(event.kind, VfxLayer::RewardRing, intensity);
             }
             FeedbackKind::BucketCatch => {
                 self.emit(event.kind, VfxLayer::BucketSnap, intensity);
                 self.emit(event.kind, VfxLayer::RewardRing, intensity);
+                self.emit(event.kind, VfxLayer::ScalePulse, intensity);
                 self.emit(event.kind, VfxLayer::CameraShake, intensity * 0.5);
             }
             FeedbackKind::NearBucketMiss => {
@@ -101,6 +111,7 @@ impl MockVfxPlaybackState {
             FeedbackKind::ExtremeFever => {
                 self.emit(event.kind, VfxLayer::FeverFreezeFrame, intensity);
                 self.emit(event.kind, VfxLayer::FeverConfetti, intensity);
+                self.emit(event.kind, VfxLayer::Bloom, intensity);
                 self.emit(event.kind, VfxLayer::CameraShake, intensity);
             }
             FeedbackKind::Loss => {
@@ -117,7 +128,11 @@ impl MockVfxPlaybackState {
         if self.accessibility.reduce_flash
             && matches!(
                 layer,
-                VfxLayer::PegFlash | VfxLayer::RewardRing | VfxLayer::FeverFreezeFrame
+                VfxLayer::PegFlash
+                    | VfxLayer::RewardRing
+                    | VfxLayer::FeverFreezeFrame
+                    | VfxLayer::ScalePulse
+                    | VfxLayer::Bloom
             )
         {
             return;
@@ -221,6 +236,7 @@ fn ethical_intensity(kind: FeedbackKind, requested: f32) -> f32 {
         FeedbackKind::OrangeHit
         | FeedbackKind::PurpleHit
         | FeedbackKind::GreenHit
+        | FeedbackKind::RelicTriggered
         | FeedbackKind::BucketCatch
         | FeedbackKind::ComboThreshold => 0.85,
         FeedbackKind::ExtremeFever => 1.0,
@@ -296,7 +312,11 @@ mod tests {
             .any(|cue| cue.layer == VfxLayer::CameraShake));
         assert!(!reduced.emitted.iter().any(|cue| matches!(
             cue.layer,
-            VfxLayer::PegFlash | VfxLayer::RewardRing | VfxLayer::FeverFreezeFrame
+            VfxLayer::PegFlash
+                | VfxLayer::RewardRing
+                | VfxLayer::FeverFreezeFrame
+                | VfxLayer::ScalePulse
+                | VfxLayer::Bloom
         )));
     }
 }

@@ -159,7 +159,7 @@ pub enum NodeMapLabel {
 impl NodeMapLabel {
     fn from_kind(kind: RunNodeKind) -> Self {
         match kind {
-            RunNodeKind::Board | RunNodeKind::EliteBoard => Self::Board,
+            RunNodeKind::Board | RunNodeKind::Elite => Self::Board,
             RunNodeKind::Shop => Self::Shop,
             RunNodeKind::Boss => Self::Boss,
             RunNodeKind::Reward | RunNodeKind::Event | RunNodeKind::Forge | RunNodeKind::Camp => {

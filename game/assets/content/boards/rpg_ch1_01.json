@@ -1,0 +1,38 @@
+{
+  "id": "boards/rpg_ch1_01",
+  "size": { "x": 20.0, "y": 35.56 },
+  "cannon_position": { "x": 10.0, "y": 1.5 },
+  "kill_plane_y": 36.5,
+  "pegs": [
+    { "id": "peg/o01", "kind": "Orange", "shape": { "Circle": { "center": { "x": 1.6, "y": 6.2 }, "radius": 0.35 } } },
+    { "id": "peg/o02", "kind": "Orange", "shape": { "Circle": { "center": { "x": 2.96, "y": 7.2 }, "radius": 0.35 } } },
+    { "id": "peg/o03", "kind": "Orange", "shape": { "Circle": { "center": { "x": 4.72, "y": 8.2 }, "radius": 0.35 } } },
+    { "id": "peg/o04", "kind": "Orange", "shape": { "Circle": { "center": { "x": 6.48, "y": 9.2 }, "radius": 0.35 } } },
+    { "id": "peg/o05", "kind": "Orange", "shape": { "Circle": { "center": { "x": 8.24, "y": 10.2 }, "radius": 0.35 } } },
+    { "id": "peg/o06", "kind": "Orange", "shape": { "Circle": { "center": { "x": 10.0, "y": 11.2 }, "radius": 0.35 } } },
+    { "id": "peg/o07", "kind": "Orange", "shape": { "Circle": { "center": { "x": 11.76, "y": 10.2 }, "radius": 0.35 } } },
+    { "id": "peg/o08", "kind": "Orange", "shape": { "Circle": { "center": { "x": 13.52, "y": 9.2 }, "radius": 0.35 } } },
+    { "id": "peg/o09", "kind": "Orange", "shape": { "Circle": { "center": { "x": 15.28, "y": 8.2 }, "radius": 0.35 } } },
+    { "id": "peg/o10", "kind": "Orange", "shape": { "Circle": { "center": { "x": 17.04, "y": 7.2 }, "radius": 0.35 } } },
+    { "id": "peg/o11", "kind": "Orange", "shape": { "Circle": { "center": { "x": 18.4, "y": 6.2 }, "radius": 0.35 } } },
+    { "id": "peg/o12", "kind": "Orange", "shape": { "Circle": { "center": { "x": 3.0, "y": 15.0 }, "radius": 0.35 } } },
+    { "id": "peg/o13", "kind": "Orange", "shape": { "Circle": { "center": { "x": 4.4, "y": 18.0 }, "radius": 0.35 } } },
+    { "id": "peg/o14", "kind": "Orange", "shape": { "Circle": { "center": { "x": 5.8, "y": 21.0 }, "radius": 0.35 } } },
+    { "id": "peg/o15", "kind": "Orange", "shape": { "Circle": { "center": { "x": 7.2, "y": 24.0 }, "radius": 0.35 } } },
+    { "id": "peg/o16", "kind": "Orange", "shape": { "Circle": { "center": { "x": 10.0, "y": 26.0 }, "radius": 0.35 } } },
+    { "id": "peg/o17", "kind": "Orange", "shape": { "Circle": { "center": { "x": 12.8, "y": 24.0 }, "radius": 0.35 } } },
+    { "id": "peg/o18", "kind": "Orange", "shape": { "Circle": { "center": { "x": 14.2, "y": 21.0 }, "radius": 0.35 } } },
+    { "id": "peg/o19", "kind": "Orange", "shape": { "Circle": { "center": { "x": 15.6, "y": 18.0 }, "radius": 0.35 } } },
+    { "id": "peg/o20", "kind": "Orange", "shape": { "Circle": { "center": { "x": 17.0, "y": 15.0 }, "radius": 0.35 } } },
+    { "id": "peg/b01", "kind": "Blue", "shape": { "Circle": { "center": { "x": 0.9, "y": 9.0 }, "radius": 0.35 } } },
+    { "id": "peg/b02", "kind": "Blue", "shape": { "Circle": { "center": { "x": 19.1, "y": 9.0 }, "radius": 0.35 } } },
+    { "id": "peg/b03", "kind": "Blue", "shape": { "Circle": { "center": { "x": 1.4, "y": 13.0 }, "radius": 0.35 } } },
+    { "id": "peg/b04", "kind": "Blue", "shape": { "Circle": { "center": { "x": 18.6, "y": 13.0 }, "radius": 0.35 } } }
+  ],
+  "obstacles": [
+    { "id": "obstacles/left_guide", "kind": "Wall", "shape": { "Segment": { "a": { "x": 0.8, "y": 7.0 }, "b": { "x": 0.8, "y": 28.0 } } } },
+    { "id": "obstacles/right_guide", "kind": "Wall", "shape": { "Segment": { "a": { "x": 19.2, "y": 7.0 }, "b": { "x": 19.2, "y": 28.0 } } } }
+  ],
+  "bucket": { "center": { "x": 10.0, "y": 34.4 }, "width": 3.0, "height": 0.55, "horizontal_speed": 6.0, "motion": "PingPong", "catch_margin": 0.18 },
+  "tags": ["rpg_ch1", "tutorial", "fan", "aim_assist"]
+}

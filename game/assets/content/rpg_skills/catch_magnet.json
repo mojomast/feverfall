@@ -1,0 +1,6 @@
+{
+  "id": "skills/rpg_ch1/catch_magnet",
+  "name": "Catch Magnet",
+  "cooldown_boards": 1,
+  "description": "Once per board, widen the basket by 1.5x for one shot."
+}

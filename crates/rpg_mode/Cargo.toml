@@ -8,6 +8,11 @@ publish.workspace = true
 [dependencies]
 content_schema = { path = "../content_schema" }
 serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
+feedback_events = { path = "../feedback_events" }
+game_rules = { path = "../game_rules" }
+physics_core = { path = "../physics_core" }
+run_mode = { path = "../run_mode" }
+telemetry = { path = "../telemetry" }

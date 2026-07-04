@@ -7,8 +7,13 @@ publish.workspace = true
 
 [dependencies]
 content_schema = { path = "../content_schema" }
+feedback_events = { path = "../feedback_events" }
 game_rules = { path = "../game_rules" }
 serde.workspace = true
 
 [dev-dependencies]
+feedback_events = { path = "../feedback_events" }
+physics_core = { path = "../physics_core" }
+rpg_mode = { path = "../rpg_mode" }
 serde_json.workspace = true
+telemetry = { path = "../telemetry" }

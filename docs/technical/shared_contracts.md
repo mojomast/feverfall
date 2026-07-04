@@ -2,13 +2,13 @@
 
 ## Type Ownership
 
-- `content_schema`: content IDs, `BoardDefinition`, board primitives, relic, ball, shop item, and content manifest schemas.
+- `content_schema`: content IDs, `BoardDefinition`, board primitives/objectives, relic, ball, shop item, RPG gear, RPG skill, balance table, and content manifest schemas.
 - `physics_core`: `ShotInput`, `SimConfig`, `PhysicsEvent`, `ShotResult`, first-bounce prediction, deterministic SHA-256 replay hashing.
 - `game_rules`: `GameEvent`, scoring/resource event vocabulary, `ReplayMetadata`.
 - `board_gen`: generation parameters and board validation reports.
 - `run_mode`: `RunState`, run nodes, reward offers/choices, Act 1 slice helpers, relic modifier trait.
-- `rpg_mode`: `CharacterState`, stats, gear slots, skills.
-- `feedback_events`: `FeedbackEvent`, accessibility feedback flags, gameplay-to-feedback mapping.
+- `rpg_mode`: `CharacterState`, stats, Chapter 1 XP/leveling, gear inventory/equip state, active skills, and campaign save/load.
+- `feedback_events`: `FeedbackEvent`, accessibility feedback flags, gameplay-to-feedback mapping. Runtime feedback/VFX coverage uses existing feedback kinds for C3 peg, bucket, combo, long-shot, near-miss, final-orange, fever, and failure triggers.
 - `telemetry`: telemetry envelopes, local JSONL logger, replay tags, QA analytics event vocabulary.
 
 ## Content ID Convention
@@ -20,6 +20,15 @@ Examples: `boards/minimal_test`, `relics/act1:first-bounce_bonus`, `skills/zen_r
 ## Duplicate Schema Rule
 
 Feature crates must depend on these owners instead of creating private lookalike event, state, board, or ID schemas. Temporary mocks should wrap or construct these contract types.
+
+## Mode Separation Contracts
+
+- Roguelite owns `RunState`, roguelite relics, roguelite rewards, and roguelite balance data. It must not require `rpg_mode::CharacterState`, RPG gear, RPG skills, or campaign chapter data.
+- RPG owns `CharacterState`, RPG gear, RPG skills, and campaign chapter data. It must not require `run_mode::RunState`, roguelite relics, roguelite rewards, or roguelite balance data.
+- Both modes may consume `physics_core`, `game_rules`, `feedback_events`, and `telemetry` through their public mode-neutral contracts.
+- `physics_core` must not depend on or import `run_mode` or `rpg_mode`; `crates/run_mode/tests/mode_separation.rs` and `crates/rpg_mode/tests/mode_separation.rs` enforce this with compile-time `include_str!` checks over the physics manifest/source.
+- Roguelite saves live under `saves/roguelite/`; RPG saves live under `saves/rpg/`.
+- Roguelite balance tables live under `content/balance/roguelite/`; RPG balance tables live under `content/balance/rpg/`.
 
 ## Physics Contracts
 
@@ -35,7 +44,8 @@ Feature crates must depend on these owners instead of creating private lookalike
 - Authored boards live under `game/assets/content/boards/*.json` using `content_schema::BoardDefinition`.
 - `board_gen::load_authored_boards` loads authored board data.
 - `board_gen::validate_board` enforces orange count, board bounds, bucket bounds, first-collision orange reachability, catch opportunity, and dead-zone thresholds.
-- Checkpoint 1 dead-zone rejection threshold is `> 15%` playable aim samples.
+- RPG chapter boards are identified by `rpg/chapter*` tags and must include at least one `BoardObjective` with a positive target. Objective IDs must be board-local unique content IDs.
+- Checkpoint 1 dead-zone rejection threshold is `> 15%` playable aim samples for general boards. Authored aim-assist tutorial boards may use up to `20%`, and authored chapter boards tagged `rpg_ch*` may use up to `30%` while remaining explicit authored content.
 - Boss boards may use boss-tagged validation allowances and must still pass `board_validator`; the current C2 content set includes `PASS boards/act1_boss_01`.
 
 ## Content Schema Contracts
@@ -43,14 +53,39 @@ Feature crates must depend on these owners instead of creating private lookalike
 - `content_schema::RelicDefinition` is the shared TOML/serde contract for relic content. It owns `RelicId`, display name, `RelicCategory`, `Rarity`, act, description, and effect reference IDs.
 - `content_schema::BallVariantDefinition` is the shared TOML/serde contract for ball content. It owns `BallId`, family ID, rarity, description, positive `BallStats`, and effect reference IDs.
 - `content_schema::ShopItemDefinition` is the shared TOML/serde contract for shop content. It owns `ShopItemId`, `ShopItemType`, act, price, stock weight, description, and the granted content ID.
-- `tools/content_linter` is the schema/id gate for board JSON plus relic, ball, and shop TOML content. The current C2 content linter pass reports 44 unique IDs.
+- `content_schema::GearDefinition` is the shared TOML/serde contract for RPG gear content. It owns `GearId`, gear slot, rarity, level requirement, display text, and effect reference IDs.
+- `content_schema::RpgSkillDefinition` is the shared TOML/serde contract for RPG skill content. It owns `SkillId`, skill tree, rank/unlock fields, timing, display text, and effect reference IDs.
+- `content_schema::BalanceTableDefinition` is the shared TOML/serde contract for balance tables. It owns a table ID, version, and finite numeric keyed entries.
+- `tools/content_linter` is the schema/id gate for board JSON plus relic, ball, shop, RPG gear, RPG skill, and balance table content under `game/assets/content` and top-level `content`. The current C3 content linter pass reports 60 unique IDs.
+
+## RPG Campaign Contracts
+
+- Chapter 1 authored boards are `boards/rpg_ch1_01` through `boards/rpg_ch1_05`.
+- `rpg_mode::CharacterState::chapter1()` creates the canonical Chapter 1 campaign start with Aim, Control, Resonance, Luck, launcher/core-ball inventory, and Zen Reroute/Catch Magnet active skills.
+- XP awards are `100 + 20 * objective_tiers_met`; level thresholds are 200, 500, and 900 XP for levels 2, 3, and 4.
+- Level-up grants stat points allocated to `ChapterStat::{Aim, Control, Resonance, Luck}`. Older stat fields remain serialized for existing C2 compatibility.
+- Gear swapping is represented by `CharacterState::equip_gear` and `unequip_gear` for Launcher/CoreBall before campaign boards.
+- Active skills use `CharacterState::use_skill`, are once per board, and tick cooldowns by board completion through `finish_board_cooldowns`.
+- Campaign save/load uses versioned JSON at `saves/rpg/campaign.json`; unknown versions return `CampaignSaveError::UnknownVersion` instead of panicking.
+- Default game smoke runs an abbreviated RPG Chapter 1 path over boards 1 and 5 and emits `TelemetryEvent::SkillUsed` for Zen Reroute and Catch Magnet.
 
 ## Run Mode Contracts
 
 - `RunState::act1_slice(seed)` creates the canonical C2 Act 1 starting run state.
+- `run_mode::ROGUELITE_SAVE_DIR` is `saves/roguelite/`; `run_mode::ROGUELITE_BALANCE_DIR` is `content/balance/roguelite/`.
 - `run_mode::act1_slice_nodes()` owns the canonical short Act 1 node path used by C2 smoke/UI summaries.
 - `run_mode::act1_slice_reward_offers()` owns deterministic reward choices for the short C2 path.
 - `RunState::advance_to_node(node)` and `RunState::apply_reward(reward)` are the shared helpers for node progression and reward application. UI and game runtime code should call these instead of duplicating state mutations.
+- `run_mode::full_run_act_plan()` and `run_mode::full_run_nodes()` own the C3 three-act roguelite structure: Act 1 is 6 normal boards, 1 elite, and 1 boss; Act 2 is 7 normal boards, 2 elites, and 1 boss; Act 3 is 8 normal boards, 2 elites, and 1 boss. Each act includes at least two deterministic path choices plus shop/event/forge/camp utility nodes.
+- `run_mode::RelicModifier` now includes `modify_board(board, state)` and `on_event(event, state)` hooks. `run_mode::ContentRelicModifier`, `apply_relic_board_modifiers`, and `trigger_relics_on_event` wire the 20 Act 1 relic content IDs to concrete board/resource mutations and emit `FeedbackKind::RelicTriggered` feedback.
+- `RunState::accept_curse()` increments curse risk on the current run and raises the resulting reward rarity track. `run_mode::MetaProgressionSave` is the skeleton save contract for `saves/roguelite/meta.json`, tracking total runs, total oranges cleared, relics seen, and three-option meta-unlock offers.
+
+## RPG Mode Contracts
+
+- `CharacterState::act1_slice()` creates the canonical C2 RPG companion state without depending on roguelite run state.
+- `rpg_mode::RPG_SAVE_DIR` is `saves/rpg/`; `rpg_mode::RPG_BALANCE_DIR` is `content/balance/rpg/`.
+- `rpg_mode::CHAPTER1_SAVE_PATH` is `saves/rpg/campaign.json`; `load_campaign` checks the save version before deserializing the full character payload so future-version files fail as `UnknownVersion` even when their body shape has changed.
+- RPG gear and skill cooldown state belongs to `CharacterState`/`SkillState`; roguelite systems must not mutate it directly.
 
 ## Telemetry Contracts
 
@@ -65,5 +100,8 @@ Feature crates must depend on these owners instead of creating private lookalike
 
 - `replay_runner` reads `tests/golden_replays/minimal_test.replay.json` by default, or a fixture path via `--replay FILE`.
 - Single-board fixtures may embed `board` or reference `board_path`.
+- RPG campaign fixtures may include an `rpg_mode::CharacterState` `character_state` snapshot alongside `board_path`; the runner parses and reports the snapshot count but keeps replay hashing scoped to deterministic physics events.
 - Multi-board fixtures use ordered `boards` entries, each with a `board_path` and `shots`; the runner simulates shots in order, carries remaining pegs within each board, increments seeds by global shot count, and hashes the combined physics events.
 - C2 golden hashes are default replay `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical-slice replay `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, and Act 1 two-board replay `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`.
+- C3 defensive smoke replay hashes are RPG Chapter 1 `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f` and roguelite 3-act `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`.
+- C3 RPG implementation smoke fixture `tests/golden_replays/rpg_ch1_smoke.replay.json` covers Chapter 1 boards 1 and 5 with hash `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`.

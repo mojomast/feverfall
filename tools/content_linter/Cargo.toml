@@ -8,5 +8,6 @@ publish.workspace = true
 [dependencies]
 anyhow.workspace = true
 content_schema = { path = "../../crates/content_schema" }
+serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true

@@ -136,6 +136,26 @@ pub struct BoardDefinition {
     pub obstacles: Vec<ObstacleDef>,
     pub bucket: BasketDef,
     pub tags: Vec<ContentId>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub objectives: Vec<BoardObjective>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BoardObjective {
+    pub id: ContentId,
+    pub kind: BoardObjectiveKind,
+    pub target: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BoardObjectiveKind {
+    ClearOrangePegs,
+    ReachScore,
+    SurviveShots,
+    HitPegKind,
+    DefeatEnemy,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -268,6 +288,60 @@ pub struct ShopItemDefinition {
     pub grants: ContentId,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GearDefinition {
+    pub id: GearId,
+    pub name: String,
+    pub slot: GearSlotDefinition,
+    pub rarity: Rarity,
+    pub level_requirement: u32,
+    pub description: String,
+    pub effects: Vec<ContentId>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GearSlotDefinition {
+    Launcher,
+    CoreBall,
+    BasketRig,
+    Charm,
+    Trinket,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RpgSkillDefinition {
+    pub id: SkillId,
+    pub name: String,
+    pub tree: ContentId,
+    pub max_rank: u8,
+    pub unlock_level: u32,
+    pub timing: SkillTimingDefinition,
+    pub description: String,
+    pub effects: Vec<ContentId>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SkillTimingDefinition {
+    Passive,
+    BeforeShot,
+    DuringShot,
+    AfterPegHit,
+    ShotEnd,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BalanceTableDefinition {
+    pub id: ContentId,
+    pub version: String,
+    pub entries: Vec<BalanceTableEntry>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BalanceTableEntry {
+    pub key: ContentId,
+    pub value: Scalar,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ShopItemType {
     Relic,
@@ -309,6 +383,7 @@ pub fn minimal_test_board() -> BoardDefinition {
         obstacles: Vec::new(),
         bucket: BasketDef::spec_default(),
         tags: vec![ContentId::new("test").expect("static id is valid")],
+        objectives: Vec::new(),
     }
 }
 
@@ -361,5 +436,23 @@ mod tests {
         let parsed: RelicDefinition = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed, relic);
+    }
+
+    #[test]
+    fn board_objectives_are_optional_for_existing_content() {
+        let json = r#"{
+            "id":"boards/legacy",
+            "size":{"x":20.0,"y":35.56},
+            "cannon_position":{"x":10.0,"y":1.5},
+            "kill_plane_y":36.5,
+            "pegs":[],
+            "obstacles":[],
+            "bucket":{"center":{"x":10.0,"y":34.4},"width":3.0,"height":0.55,"horizontal_speed":6.0,"motion":"PingPong","catch_margin":0.18},
+            "tags":[]
+        }"#;
+
+        let parsed: BoardDefinition = serde_json::from_str(json).unwrap();
+
+        assert!(parsed.objectives.is_empty());
     }
 }

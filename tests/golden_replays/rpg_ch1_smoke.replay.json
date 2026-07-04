@@ -1,0 +1,29 @@
+{
+  "name": "rpg_ch1_smoke",
+  "mode": "rpg_chapter1_smoke",
+  "seed": 140733193388035,
+  "boards": [
+    {
+      "board_path": "game/assets/content/boards/rpg_ch1_01.json",
+      "shots": [
+        {
+          "aim_angle_radians": 1.5707963267948966,
+          "launch_speed": 17.5,
+          "ball_id": "balls/basic"
+        }
+      ]
+    },
+    {
+      "board_path": "game/assets/content/boards/rpg_ch1_05.json",
+      "shots": [
+        {
+          "aim_angle_radians": 1.4835298641951802,
+          "launch_speed": 17.5,
+          "ball_id": "balls/basic"
+        }
+      ]
+    }
+  ],
+  "expected_hash": "fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58",
+  "pending_simulator": false
+}

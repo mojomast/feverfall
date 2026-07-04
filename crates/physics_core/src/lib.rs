@@ -909,6 +909,7 @@ mod tests {
                 ..BasketDef::spec_default()
             },
             tags: Vec::new(),
+            objectives: Vec::new(),
         }
     }
 

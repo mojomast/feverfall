@@ -1551,6 +1551,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "content_schema",
+ "serde",
  "serde_json",
  "toml",
 ]
@@ -3505,6 +3506,7 @@ dependencies = [
  "content_schema",
  "game_rules",
  "physics_core",
+ "rpg_mode",
  "serde",
  "serde_json",
 ]
@@ -3528,8 +3530,13 @@ name = "rpg_mode"
 version = "0.1.0"
 dependencies = [
  "content_schema",
+ "feedback_events",
+ "game_rules",
+ "physics_core",
+ "run_mode",
  "serde",
  "serde_json",
+ "telemetry",
 ]
 
 [[package]]
@@ -3537,9 +3544,13 @@ name = "run_mode"
 version = "0.1.0"
 dependencies = [
  "content_schema",
+ "feedback_events",
  "game_rules",
+ "physics_core",
+ "rpg_mode",
  "serde",
  "serde_json",
+ "telemetry",
 ]
 
 [[package]]

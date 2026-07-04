@@ -1,0 +1,39 @@
+{
+  "name": "roguelite_act1to3_smoke",
+  "mode": "roguelite_act1to3_smoke",
+  "seed": 14105274032924393475,
+  "boards": [
+    {
+      "board_path": "game/assets/content/boards/feel_fan_01.json",
+      "shots": [
+        {
+          "aim_angle_radians": 1.4835298641951802,
+          "launch_speed": 17.5,
+          "ball_id": "balls/basic"
+        }
+      ]
+    },
+    {
+      "board_path": "game/assets/content/boards/feel_wave_01.json",
+      "shots": [
+        {
+          "aim_angle_radians": 1.5707963267948966,
+          "launch_speed": 17.5,
+          "ball_id": "balls/basic"
+        }
+      ]
+    },
+    {
+      "board_path": "game/assets/content/boards/act1_boss_01/board.json",
+      "shots": [
+        {
+          "aim_angle_radians": 1.4835298641951802,
+          "launch_speed": 17.5,
+          "ball_id": "balls/basic"
+        }
+      ]
+    }
+  ],
+  "expected_hash": "c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a",
+  "pending_simulator": false
+}

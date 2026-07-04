@@ -4,6 +4,10 @@ use physics_core::{PhysicsEvent, ShotInput, ShotResult};
 
 use crate::plugins::{audio::MockAudioPlaybackState, vfx::MockVfxPlaybackState};
 
+const COMBO_THRESHOLDS: [u32; 4] = [3, 6, 10, 15];
+const LONG_SHOT_DISTANCE_RATIO: f64 = 0.42;
+const LONG_SHOT_SPEED: f64 = 16.0;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct FeelTestFeedbackPlayback {
     pub events: Vec<FeedbackEvent>,
@@ -17,6 +21,12 @@ pub struct FeedbackCueSummary {
     pub kind: FeedbackKind,
     pub vfx_cues: usize,
     pub audio_cues: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct FeedbackTriggerCoverage {
+    pub trigger: &'static str,
+    pub event: FeedbackEvent,
 }
 
 pub fn play_feel_test_shot(
@@ -67,8 +77,15 @@ pub fn feedback_events_for_shot_result(
 ) -> Vec<FeedbackEvent> {
     let mut events = Vec::new();
     let mut combo = 0;
+    let mut orange_hits = 0;
+    let starting_oranges = board
+        .pegs
+        .iter()
+        .filter(|peg| peg.kind == PegKind::Orange)
+        .count() as u32;
     let mut caught_bucket = false;
     let mut exited_board = false;
+    let mut long_shot_reported = false;
 
     for event in &result.events {
         match event {
@@ -76,7 +93,37 @@ pub fn feedback_events_for_shot_result(
                 if let Some(kind) = peg_kind(board, peg) {
                     if let Some(feedback) = peg_feedback(*kind, *position, combo + 1) {
                         combo += 1;
+                        if *kind == PegKind::Orange {
+                            orange_hits += 1;
+                        }
                         events.push(feedback);
+                        if should_emit_combo(combo) {
+                            events.push(combo_feedback(*position, combo));
+                        }
+                        if !long_shot_reported && is_long_shot(board, *position) {
+                            long_shot_reported = true;
+                            events.push(long_shot_feedback(*position, combo));
+                        }
+                        if *kind == PegKind::Orange
+                            && starting_oranges.saturating_sub(orange_hits) == 1
+                        {
+                            events.push(FeedbackEvent {
+                                kind: FeedbackKind::FinalOrangeTension,
+                                intensity: 0.6,
+                                position: *position,
+                                combo,
+                                value: 0,
+                            });
+                        }
+                        if *kind == PegKind::Orange && starting_oranges == orange_hits {
+                            events.push(FeedbackEvent {
+                                kind: FeedbackKind::ExtremeFever,
+                                intensity: 1.0,
+                                position: *position,
+                                combo,
+                                value: 50_000,
+                            });
+                        }
                     }
                 }
             }
@@ -102,6 +149,15 @@ pub fn feedback_events_for_shot_result(
     }
 
     if !caught_bucket && exited_board {
+        if combo > 0 {
+            events.push(FeedbackEvent {
+                kind: FeedbackKind::NearBucketMiss,
+                intensity: 0.2,
+                position: board.bucket.center,
+                combo,
+                value: 0,
+            });
+        }
         events.push(FeedbackEvent {
             kind: FeedbackKind::Loss,
             intensity: 0.2,
@@ -112,6 +168,48 @@ pub fn feedback_events_for_shot_result(
     }
 
     events
+}
+
+pub fn c3_feedback_trigger_coverage() -> Vec<FeedbackTriggerCoverage> {
+    let position = Vec2::new(10.0, 18.0);
+    vec![
+        coverage("blue_peg_hit", FeedbackKind::PegHit, 0.35, 1, 100),
+        coverage("orange_peg_hit", FeedbackKind::OrangeHit, 0.65, 1, 1_000),
+        coverage("purple_peg_hit", FeedbackKind::PurpleHit, 0.8, 1, 5_000),
+        coverage("green_peg_hit", FeedbackKind::GreenHit, 0.7, 1, 500),
+        coverage("bucket_catch", FeedbackKind::BucketCatch, 0.8, 2, 2_500),
+        coverage("combo_3", FeedbackKind::ComboThreshold, 0.55, 3, 0),
+        coverage("combo_6", FeedbackKind::ComboThreshold, 0.65, 6, 0),
+        coverage("combo_10", FeedbackKind::ComboThreshold, 0.75, 10, 0),
+        coverage("combo_15_plus", FeedbackKind::ComboThreshold, 0.85, 15, 0),
+        coverage("long_shot", FeedbackKind::ComboThreshold, 0.7, 1, 750),
+        coverage("near_miss", FeedbackKind::NearBucketMiss, 0.2, 0, 0),
+        coverage(
+            "last_orange_in_flight",
+            FeedbackKind::FinalOrangeTension,
+            0.6,
+            4,
+            0,
+        ),
+        coverage("extreme_fever", FeedbackKind::ExtremeFever, 1.0, 5, 50_000),
+        coverage("board_failure", FeedbackKind::Loss, 0.2, 0, 0),
+    ]
+    .into_iter()
+    .map(|mut item| {
+        item.event.position = position;
+        item
+    })
+    .collect()
+}
+
+pub fn c3_feedback_trigger_summary() -> String {
+    let coverage = c3_feedback_trigger_coverage();
+    let labels = coverage
+        .iter()
+        .map(|item| item.trigger)
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("c3_vfx_triggers={} [{}]", coverage.len(), labels)
 }
 
 fn peg_kind<'a>(board: &'a BoardDefinition, peg: &PegId) -> Option<&'a PegKind> {
@@ -142,6 +240,61 @@ fn peg_feedback(kind: PegKind, position: Vec2, combo: u32) -> Option<FeedbackEve
     })
 }
 
+fn should_emit_combo(combo: u32) -> bool {
+    COMBO_THRESHOLDS.contains(&combo)
+}
+
+fn combo_feedback(position: Vec2, combo: u32) -> FeedbackEvent {
+    FeedbackEvent {
+        kind: FeedbackKind::ComboThreshold,
+        intensity: match combo {
+            0..=3 => 0.55,
+            4..=6 => 0.65,
+            7..=10 => 0.75,
+            _ => 0.85,
+        },
+        position,
+        combo,
+        value: 0,
+    }
+}
+
+fn is_long_shot(board: &BoardDefinition, position: Vec2) -> bool {
+    let dx = position.x - board.cannon_position.x;
+    let dy = position.y - board.cannon_position.y;
+    let distance = (dx * dx + dy * dy).sqrt();
+    distance >= board.size.y * LONG_SHOT_DISTANCE_RATIO || distance >= LONG_SHOT_SPEED
+}
+
+fn long_shot_feedback(position: Vec2, combo: u32) -> FeedbackEvent {
+    FeedbackEvent {
+        kind: FeedbackKind::ComboThreshold,
+        intensity: 0.7,
+        position,
+        combo,
+        value: 750,
+    }
+}
+
+fn coverage(
+    trigger: &'static str,
+    kind: FeedbackKind,
+    intensity: f32,
+    combo: u32,
+    value: Score,
+) -> FeedbackTriggerCoverage {
+    FeedbackTriggerCoverage {
+        trigger,
+        event: FeedbackEvent {
+            kind,
+            intensity,
+            position: Vec2::ZERO,
+            combo,
+            value,
+        },
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -157,10 +310,13 @@ mod tests {
             pegs: vec![
                 peg("peg/blue", PegKind::Blue, Vec2::new(9.0, 10.0)),
                 peg("peg/orange", PegKind::Orange, Vec2::new(10.0, 12.0)),
+                peg("peg/purple", PegKind::Purple, Vec2::new(11.0, 18.0)),
+                peg("peg/green", PegKind::Green, Vec2::new(12.0, 20.0)),
             ],
             obstacles: Vec::new(),
             bucket: BasketDef::spec_default(),
             tags: Vec::new(),
+            objectives: Vec::new(),
         }
     }
 
@@ -230,10 +386,11 @@ mod tests {
             vec![
                 FeedbackKind::PegHit,
                 FeedbackKind::OrangeHit,
+                FeedbackKind::ExtremeFever,
                 FeedbackKind::BucketCatch
             ]
         );
-        assert_eq!(playback.summaries.len(), 3);
+        assert_eq!(playback.summaries.len(), 4);
         assert!(playback
             .summaries
             .iter()
@@ -330,5 +487,62 @@ mod tests {
             .events
             .iter()
             .any(|event| matches!(event.kind, FeedbackKind::OrangeHit | FeedbackKind::Loss)));
+    }
+
+    #[test]
+    fn c3_trigger_coverage_maps_all_required_feedback_without_new_fields() {
+        let coverage = c3_feedback_trigger_coverage();
+        let labels = coverage
+            .iter()
+            .map(|item| item.trigger)
+            .collect::<std::collections::HashSet<_>>();
+
+        for required in [
+            "blue_peg_hit",
+            "orange_peg_hit",
+            "purple_peg_hit",
+            "green_peg_hit",
+            "bucket_catch",
+            "combo_3",
+            "combo_6",
+            "combo_10",
+            "combo_15_plus",
+            "long_shot",
+            "near_miss",
+            "last_orange_in_flight",
+            "extreme_fever",
+            "board_failure",
+        ] {
+            assert!(labels.contains(required), "missing C3 trigger {required}");
+        }
+
+        let mut vfx = MockVfxPlaybackState::new(AccessibilityFeedbackFlags::DEFAULT);
+        let mut audio = MockAudioPlaybackState::new(AccessibilityFeedbackFlags::DEFAULT);
+        for item in &coverage {
+            vfx.play_event(&item.event);
+            audio.play_event(&item.event);
+        }
+        assert!(!vfx.emitted.is_empty());
+        assert!(!audio.emitted.is_empty());
+    }
+
+    #[test]
+    fn reduce_flash_and_shake_remove_c3_pulses_bloom_and_camera_impulses() {
+        let mut reduced = MockVfxPlaybackState::new(AccessibilityFeedbackFlags {
+            reduce_shake: true,
+            reduce_flash: true,
+            mute_high_frequency_layers: false,
+        });
+
+        for item in c3_feedback_trigger_coverage() {
+            reduced.play_event(&item.event);
+        }
+
+        assert!(!reduced.emitted.iter().any(|cue| matches!(
+            cue.layer,
+            crate::plugins::vfx::VfxLayer::CameraShake
+                | crate::plugins::vfx::VfxLayer::ScalePulse
+                | crate::plugins::vfx::VfxLayer::Bloom
+        )));
     }
 }

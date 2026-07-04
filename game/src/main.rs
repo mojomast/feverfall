@@ -1,4 +1,5 @@
 mod plugins;
+mod rpg_chapter1;
 mod vertical_slice;
 
 #[cfg(feature = "bevy_feel_test")]
@@ -36,10 +37,38 @@ fn main() {
         Err(error) => eprintln!("checkpoint2 vertical slice unavailable: {error}"),
     }
 
+    match rpg_chapter1::run_chapter1_smoke() {
+        Ok(session) => {
+            println!("{}", session.summary_line());
+            let mut logger =
+                telemetry::JsonlTelemetryLogger::new(std::io::stdout().lock(), "rpg-ch1-smoke");
+            for event in session.telemetry_events() {
+                if let Err(error) = logger.log(event) {
+                    eprintln!("rpg chapter1 telemetry unavailable: {error}");
+                    break;
+                }
+            }
+            if let Err(error) = logger.flush() {
+                eprintln!("rpg chapter1 telemetry flush unavailable: {error}");
+            }
+        }
+        Err(error) => eprintln!("rpg chapter1 smoke unavailable: {error}"),
+    }
+
     match plugins::feel_test::run_smoke_scene() {
-        Ok(scene) => println!("{}", scene.outcome_line()),
+        Ok(scene) => println!(
+            "{} {}",
+            scene.outcome_line(),
+            plugins::feedback::c3_feedback_trigger_summary()
+        ),
         Err(error) => eprintln!("feel-test scene unavailable: {error}"),
     }
+
+    let roguelite = vertical_slice::run_roguelite_act1to3_smoke(0xC3C0_0000_0000_0003);
+    for act in &roguelite.acts {
+        println!("{}", act.display_line());
+    }
+    println!("{}", roguelite.display_line());
 }
 
 #[cfg(feature = "bevy_feel_test")]

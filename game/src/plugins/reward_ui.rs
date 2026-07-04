@@ -98,6 +98,11 @@ impl RewardCardModel {
                 "Remove curse pressure from future rewards.".to_owned(),
                 None,
             ),
+            Reward::Curse { reward_rarity } => (
+                "Accept Curse".to_owned(),
+                format!("Gain a {reward_rarity:?} reward offer and add curse pressure."),
+                None,
+            ),
         };
 
         Self {
@@ -213,24 +218,20 @@ struct RelicMetadata {
 
 fn relic_metadata(id: &RelicId) -> RelicMetadata {
     match id.as_str() {
-        "relics/act1/spark_catcher" => RelicMetadata {
-            name: "Spark Catcher",
-            description: "Bucket catches preserve extra spark energy.",
-        },
-        "relics/act1/steady_bucket" => RelicMetadata {
-            name: "Steady Bucket",
+        "relics/act1/wide_cup_rim" => RelicMetadata {
+            name: "Wide Cup Rim",
             description: "The bucket holds a wider reliable catch lane.",
         },
-        "relics/act1/orange_echo" => RelicMetadata {
-            name: "Orange Echo",
+        "relics/act1/orange_lacquer" => RelicMetadata {
+            name: "Orange Lacquer",
             description: "Orange hits leave a faint scoring echo.",
         },
-        "relics/act1/stonebreaker" => RelicMetadata {
-            name: "Stonebreaker",
+        "relics/act1/stone_chisel" => RelicMetadata {
+            name: "Stone Chisel",
             description: "Cracked stones become less punishing on future boards.",
         },
-        "relics/act1/feverheart" => RelicMetadata {
-            name: "Feverheart",
+        "relics/act1/copper_interest" => RelicMetadata {
+            name: "Copper Interest",
             description: "Board clears carry more fever into the next node.",
         },
         _ => RelicMetadata {
@@ -263,9 +264,9 @@ fn sample_offer() -> RewardOffer {
 pub fn act1_feel_test_relic_offer() -> RewardOffer {
     RewardOffer {
         choices: vec![
-            Reward::Relic(RelicId::new("relics/act1/orange_echo").expect("static id is valid")),
-            Reward::Relic(RelicId::new("relics/act1/steady_bucket").expect("static id is valid")),
-            Reward::Relic(RelicId::new("relics/act1/stonebreaker").expect("static id is valid")),
+            Reward::Relic(RelicId::new("relics/act1/orange_lacquer").expect("static id is valid")),
+            Reward::Relic(RelicId::new("relics/act1/wide_cup_rim").expect("static id is valid")),
+            Reward::Relic(RelicId::new("relics/act1/stone_chisel").expect("static id is valid")),
         ],
         rarity: RewardRarity::Uncommon,
         source: content_schema::ContentId::new("runs/act1/feel_test_reward")
@@ -281,9 +282,9 @@ mod tests {
     fn reward_selection_applies_correct_relic_to_run_state() {
         let offer = RewardOffer {
             choices: vec![
-                Reward::Relic(RelicId::new("relics/act1/orange_echo").unwrap()),
-                Reward::Relic(RelicId::new("relics/act1/steady_bucket").unwrap()),
-                Reward::Relic(RelicId::new("relics/act1/stonebreaker").unwrap()),
+                Reward::Relic(RelicId::new("relics/act1/orange_lacquer").unwrap()),
+                Reward::Relic(RelicId::new("relics/act1/wide_cup_rim").unwrap()),
+                Reward::Relic(RelicId::new("relics/act1/stone_chisel").unwrap()),
             ],
             rarity: RewardRarity::Rare,
             source: content_schema::ContentId::new("runs/test/reward").unwrap(),
@@ -300,7 +301,7 @@ mod tests {
         assert!(run_state
             .relics
             .iter()
-            .any(|relic| relic.id.as_str() == "relics/act1/steady_bucket" && relic.stacks == 1));
+            .any(|relic| relic.id.as_str() == "relics/act1/wide_cup_rim" && relic.stacks == 2));
     }
 
     #[test]
@@ -323,16 +324,16 @@ mod tests {
         assert!(first
             .relics
             .iter()
-            .any(|relic| relic.id.as_str() == "relics/act1/orange_echo" && relic.stacks == 1));
+            .any(|relic| relic.id.as_str() == "relics/act1/orange_lacquer" && relic.stacks == 1));
     }
 
     #[test]
     fn primitive_card_model_exposes_labels_descriptions_and_rarity() {
         let offer = RewardOffer {
             choices: vec![
-                Reward::Relic(RelicId::new("relics/act1/orange_echo").unwrap()),
-                Reward::Relic(RelicId::new("relics/act1/steady_bucket").unwrap()),
-                Reward::Relic(RelicId::new("relics/act1/stonebreaker").unwrap()),
+                Reward::Relic(RelicId::new("relics/act1/orange_lacquer").unwrap()),
+                Reward::Relic(RelicId::new("relics/act1/wide_cup_rim").unwrap()),
+                Reward::Relic(RelicId::new("relics/act1/stone_chisel").unwrap()),
             ],
             rarity: RewardRarity::Uncommon,
             source: content_schema::ContentId::new("runs/test/cards").unwrap(),
@@ -341,14 +342,14 @@ mod tests {
         let screen = RewardChoiceScreen::from_offer(&offer);
 
         assert_eq!(screen.cards.len(), 3);
-        assert_eq!(screen.cards[0].title, "Orange Echo");
+        assert_eq!(screen.cards[0].title, "Orange Lacquer");
         assert!(screen.cards[0].description.contains("Orange hits"));
         assert_eq!(screen.cards[0].rarity, RewardRarity::Uncommon);
         assert_eq!(screen.cards[0].shape, RewardCardShape::RoundedRect);
         assert_eq!(screen.cards[1].hotkey, '2');
         assert_eq!(
             screen.cards[2].relic_id.as_ref().unwrap().as_str(),
-            "relics/act1/stonebreaker"
+            "relics/act1/stone_chisel"
         );
     }
 }

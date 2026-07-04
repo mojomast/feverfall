@@ -1,0 +1,43 @@
+{
+  "id": "boards/rpg_ch1_05",
+  "size": { "x": 20.0, "y": 35.56 },
+  "cannon_position": { "x": 10.0, "y": 1.5 },
+  "kill_plane_y": 36.5,
+  "pegs": [
+    { "id": "peg/o01", "kind": "Orange", "shape": { "Circle": { "center": { "x": 1.2, "y": 6.2 }, "radius": 0.35 } } },
+    { "id": "peg/o02", "kind": "Orange", "shape": { "Circle": { "center": { "x": 2.96, "y": 6.8 }, "radius": 0.35 } } },
+    { "id": "peg/o03", "kind": "Orange", "shape": { "Circle": { "center": { "x": 4.72, "y": 7.4 }, "radius": 0.35 } } },
+    { "id": "peg/o04", "kind": "Orange", "shape": { "Circle": { "center": { "x": 6.48, "y": 8.0 }, "radius": 0.35 } } },
+    { "id": "peg/o05", "kind": "Orange", "shape": { "Circle": { "center": { "x": 8.24, "y": 8.6 }, "radius": 0.35 } } },
+    { "id": "peg/o06", "kind": "Orange", "shape": { "Circle": { "center": { "x": 10.0, "y": 9.2 }, "radius": 0.35 } } },
+    { "id": "peg/o07", "kind": "Orange", "shape": { "Circle": { "center": { "x": 11.76, "y": 8.6 }, "radius": 0.35 } } },
+    { "id": "peg/o08", "kind": "Orange", "shape": { "Circle": { "center": { "x": 13.52, "y": 8.0 }, "radius": 0.35 } } },
+    { "id": "peg/o09", "kind": "Orange", "shape": { "Circle": { "center": { "x": 15.28, "y": 7.4 }, "radius": 0.35 } } },
+    { "id": "peg/o10", "kind": "Orange", "shape": { "Circle": { "center": { "x": 17.04, "y": 6.8 }, "radius": 0.35 } } },
+    { "id": "peg/o11", "kind": "Orange", "shape": { "Circle": { "center": { "x": 18.8, "y": 6.2 }, "radius": 0.35 } } },
+    { "id": "peg/o12", "kind": "Orange", "shape": { "Circle": { "center": { "x": 4.0, "y": 13.0 }, "radius": 0.35 } } },
+    { "id": "peg/o13", "kind": "Orange", "shape": { "Circle": { "center": { "x": 7.0, "y": 13.0 }, "radius": 0.35 } } },
+    { "id": "peg/o14", "kind": "Orange", "shape": { "Circle": { "center": { "x": 13.0, "y": 13.0 }, "radius": 0.35 } } },
+    { "id": "peg/o15", "kind": "Orange", "shape": { "Circle": { "center": { "x": 16.0, "y": 13.0 }, "radius": 0.35 } } },
+    { "id": "peg/o16", "kind": "Orange", "shape": { "Circle": { "center": { "x": 4.0, "y": 18.0 }, "radius": 0.35 } } },
+    { "id": "peg/o17", "kind": "Orange", "shape": { "Circle": { "center": { "x": 7.0, "y": 18.0 }, "radius": 0.35 } } },
+    { "id": "peg/o18", "kind": "Orange", "shape": { "Circle": { "center": { "x": 13.0, "y": 18.0 }, "radius": 0.35 } } },
+    { "id": "peg/o19", "kind": "Orange", "shape": { "Circle": { "center": { "x": 16.0, "y": 18.0 }, "radius": 0.35 } } },
+    { "id": "peg/o20", "kind": "Orange", "shape": { "Circle": { "center": { "x": 4.0, "y": 23.0 }, "radius": 0.35 } } },
+    { "id": "peg/o21", "kind": "Orange", "shape": { "Circle": { "center": { "x": 7.0, "y": 23.0 }, "radius": 0.35 } } },
+    { "id": "peg/o22", "kind": "Orange", "shape": { "Circle": { "center": { "x": 13.0, "y": 23.0 }, "radius": 0.35 } } },
+    { "id": "peg/o23", "kind": "Orange", "shape": { "Circle": { "center": { "x": 16.0, "y": 23.0 }, "radius": 0.35 } } },
+    { "id": "peg/o24", "kind": "Orange", "shape": { "Circle": { "center": { "x": 5.2, "y": 28.0 }, "radius": 0.35 } } },
+    { "id": "peg/o25", "kind": "Orange", "shape": { "Circle": { "center": { "x": 8.4, "y": 28.0 }, "radius": 0.35 } } },
+    { "id": "peg/o26", "kind": "Orange", "shape": { "Circle": { "center": { "x": 11.6, "y": 28.0 }, "radius": 0.35 } } },
+    { "id": "peg/o27", "kind": "Orange", "shape": { "Circle": { "center": { "x": 14.8, "y": 28.0 }, "radius": 0.35 } } },
+    { "id": "peg/o28", "kind": "Orange", "shape": { "Circle": { "center": { "x": 10.0, "y": 31.0 }, "radius": 0.35 } } }
+  ],
+  "obstacles": [
+    { "id": "obstacle/fortress_left", "kind": "Stone", "shape": { "Rect": { "center": { "x": 6.0, "y": 15.5 }, "half_extents": { "x": 0.32, "y": 4.0 } } } },
+    { "id": "obstacle/fortress_right", "kind": "Stone", "shape": { "Rect": { "center": { "x": 14.0, "y": 15.5 }, "half_extents": { "x": 0.32, "y": 4.0 } } } },
+    { "id": "obstacle/rotating_row_scripted", "kind": "Stone", "shape": { "Rect": { "center": { "x": 10.0, "y": 20.5 }, "half_extents": { "x": 3.0, "y": 0.24 } } } }
+  ],
+  "bucket": { "center": { "x": 10.0, "y": 34.4 }, "width": 3.6, "height": 0.55, "horizontal_speed": 6.0, "motion": "Scripted", "catch_margin": 0.18 },
+  "tags": ["rpg_ch1", "boss", "fortress_stone", "scripted_rotating_obstacle_row"]
+}

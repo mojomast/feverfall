@@ -6,8 +6,8 @@ use game_rules::{promote_physics_event, GameEvent, LossReason, ResourceKind};
 use physics_core::{simulate_shot, ShotInput, ShotResult};
 use rpg_mode::CharacterState;
 use run_mode::{
-    act1_slice_nodes, act1_slice_reward_offers, RewardOffer, RunNode, RunNodeKind, RunResources,
-    RunState,
+    act1_slice_nodes, act1_slice_reward_offers, all_relic_ids, full_run_act_plan, full_run_nodes,
+    MetaProgressionSave, RewardOffer, RunNode, RunNodeKind, RunResources, RunState,
 };
 
 use crate::plugins::{
@@ -654,6 +654,191 @@ pub fn run_checkpoint2_smoke_session() -> Result<VerticalSliceSession, VerticalS
     Err(VerticalSliceError::SmokeRunDidNotFinish)
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RogueliteActSmokeSummary {
+    pub act: u8,
+    pub normal_boards: u32,
+    pub elites: u32,
+    pub bosses: u32,
+    pub utility_nodes: u32,
+    pub hearts: u32,
+    pub coins: u32,
+    pub sparks: u32,
+    pub keys: u32,
+    pub branch_choices: u32,
+}
+
+impl RogueliteActSmokeSummary {
+    pub fn display_line(&self) -> String {
+        format!(
+            "roguelite_act_summary act={} normal_boards={} elites={} bosses={} utility_nodes={} hearts={} coins={} sparks={} keys={} branch_choices={}",
+            self.act,
+            self.normal_boards,
+            self.elites,
+            self.bosses,
+            self.utility_nodes,
+            self.hearts,
+            self.coins,
+            self.sparks,
+            self.keys,
+            self.branch_choices,
+        )
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RogueliteSmokeRun {
+    pub seed: Seed,
+    pub acts: Vec<RogueliteActSmokeSummary>,
+    pub final_state: RunState,
+    pub meta: MetaProgressionSave,
+    pub summary_hash: String,
+}
+
+impl RogueliteSmokeRun {
+    pub fn display_line(&self) -> String {
+        format!(
+            "roguelite_act1to3_smoke seed={} acts={} final_act={} hearts={} coins={} sparks={} keys={} relics_seen={} meta_path={} summary_hash={}",
+            self.seed,
+            self.acts.len(),
+            self.final_state.act,
+            self.final_state.resources.hearts,
+            self.final_state.resources.coins,
+            self.final_state.resources.sparks,
+            self.final_state.resources.keys,
+            self.meta.relics_seen.len(),
+            run_mode::META_SAVE_PATH,
+            self.summary_hash,
+        )
+    }
+}
+
+pub fn run_roguelite_act1to3_smoke(seed: Seed) -> RogueliteSmokeRun {
+    let nodes = full_run_nodes();
+    let mut state = RunState::new(seed);
+    let relics = all_relic_ids();
+    state.relics = relics
+        .iter()
+        .take(5)
+        .cloned()
+        .map(|id| run_mode::RelicInstance { id, stacks: 1 })
+        .collect();
+    let mut acts = Vec::new();
+
+    for plan in full_run_act_plan() {
+        state.act = plan.act;
+        let act_nodes = nodes
+            .iter()
+            .filter(|node| node.act == plan.act)
+            .collect::<Vec<_>>();
+        let branch_choices = act_nodes
+            .iter()
+            .map(|node| node.path_choices.len() as u32)
+            .sum::<u32>();
+        let mut normal_boards = 0;
+        let mut elites = 0;
+        let mut bosses = 0;
+        let mut utility_nodes = 0;
+
+        for node in act_nodes {
+            state.advance_to_node(node.clone());
+            match node.kind {
+                RunNodeKind::Board => {
+                    normal_boards += 1;
+                    state.resources.coins += 5 + u32::from(plan.act);
+                    state.resources.sparks += 1;
+                }
+                RunNodeKind::Elite => {
+                    elites += 1;
+                    state.resources.coins += 12 + u32::from(plan.act);
+                    state.resources.sparks += 2;
+                }
+                RunNodeKind::Boss => {
+                    bosses += 1;
+                    state.resources.coins += 20 + u32::from(plan.act) * 2;
+                    state.resources.keys += u32::from(plan.act == 3);
+                }
+                RunNodeKind::Camp => {
+                    utility_nodes += 1;
+                    state.resources.hearts += 1;
+                }
+                RunNodeKind::Event => {
+                    utility_nodes += 1;
+                    if plan.act == 2 {
+                        let _ = state.accept_curse();
+                    } else if plan.act == 3 {
+                        state.resources.keys += 1;
+                    }
+                }
+                RunNodeKind::Shop => {
+                    utility_nodes += 1;
+                    state.resources.coins = state.resources.coins.saturating_sub(8);
+                }
+                RunNodeKind::Forge => {
+                    utility_nodes += 1;
+                    state.resources.coins = state.resources.coins.saturating_sub(6);
+                    state.resources.sparks = state.resources.sparks.saturating_sub(1);
+                }
+                RunNodeKind::Reward => utility_nodes += 1,
+            }
+        }
+
+        acts.push(RogueliteActSmokeSummary {
+            act: plan.act,
+            normal_boards,
+            elites,
+            bosses,
+            utility_nodes,
+            hearts: state.resources.hearts,
+            coins: state.resources.coins,
+            sparks: state.resources.sparks,
+            keys: state.resources.keys,
+            branch_choices,
+        });
+    }
+
+    let mut meta = MetaProgressionSave::default();
+    let oranges_cleared = acts
+        .iter()
+        .map(|act| (act.normal_boards + act.elites + act.bosses) as u64 * 10)
+        .sum::<u64>();
+    meta.record_run_end(oranges_cleared, &state.relics);
+    let summary_hash = roguelite_smoke_hash(seed, &acts, &state, &meta);
+
+    RogueliteSmokeRun {
+        seed,
+        acts,
+        final_state: state,
+        meta,
+        summary_hash,
+    }
+}
+
+fn roguelite_smoke_hash(
+    seed: Seed,
+    acts: &[RogueliteActSmokeSummary],
+    state: &RunState,
+    meta: &MetaProgressionSave,
+) -> String {
+    let mut hash = FNV_OFFSET;
+    hash = fnv_u64(hash, seed);
+    hash = fnv_u64(hash, u64::from(state.act));
+    hash = fnv_u64(hash, u64::from(state.resources.hearts));
+    hash = fnv_u64(hash, u64::from(state.resources.coins));
+    hash = fnv_u64(hash, u64::from(state.resources.sparks));
+    hash = fnv_u64(hash, u64::from(state.resources.keys));
+    hash = fnv_u64(hash, meta.total_oranges_cleared);
+    for act in acts {
+        hash = fnv_u64(hash, u64::from(act.act));
+        hash = fnv_u64(hash, u64::from(act.normal_boards));
+        hash = fnv_u64(hash, u64::from(act.elites));
+        hash = fnv_u64(hash, u64::from(act.bosses));
+        hash = fnv_u64(hash, u64::from(act.utility_nodes));
+        hash = fnv_u64(hash, u64::from(act.branch_choices));
+    }
+    format!("{hash:016x}")
+}
+
 pub fn load_act1_run_session(seed: Seed) -> Result<VerticalSliceSession, VerticalSliceError> {
     let boards = load_authored_boards(authored_boards_dir())?;
     let first_board_id = act1_slice_nodes()
@@ -955,7 +1140,7 @@ mod tests {
             .run_state
             .relics
             .iter()
-            .any(|relic| relic.id.as_str() == "relics/act1/steady_bucket"));
+            .any(|relic| relic.id.as_str() == "relics/act1/wide_cup_rim"));
         assert!(matches!(session.screen, RunScreen::NodeMap(_)));
         session
             .advance_from_node_map_input(NodeMapInput::Enter)

@@ -1,15 +1,19 @@
 use anyhow::{Context, Result};
 use content_schema::{
-    BallVariantDefinition, BoardDefinition, ContentId, RelicDefinition, ShopItemDefinition,
+    BallVariantDefinition, BoardDefinition, ContentId, GearDefinition, GearId, GearSlotDefinition,
+    RelicDefinition, RpgSkillDefinition, ShopItemDefinition, SkillId,
 };
+use serde::Deserialize;
 use std::{collections::BTreeSet, fs, path::Path};
 
 const CONTENT_DIR: &str = "game/assets/content";
+const ROOT_CONTENT_DIR: &str = "content";
 
 fn main() -> Result<()> {
     let mut ids = BTreeSet::new();
     let mut errors = Vec::new();
     lint_content_dir(Path::new(CONTENT_DIR), &mut ids, &mut errors)?;
+    lint_optional_content_dir(Path::new(ROOT_CONTENT_DIR), &mut ids, &mut errors)?;
 
     if errors.is_empty() {
         println!("content lint passed: {} unique id(s)", ids.len());
@@ -20,6 +24,17 @@ fn main() -> Result<()> {
         }
         anyhow::bail!("content lint failed with {} error(s)", errors.len())
     }
+}
+
+fn lint_optional_content_dir(
+    path: &Path,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) -> Result<()> {
+    if path.exists() {
+        visit(path, ids, errors)?;
+    }
+    Ok(())
 }
 
 fn lint_content_dir(
@@ -96,6 +111,12 @@ fn lint_content_file(
             Ok(item) => lint_shop_item(&item, &path.display().to_string(), ids, errors),
             Err(error) => errors.push(format!("{} schema violation: {error}", path.display())),
         }
+    } else if has_path_component(path, "gear") || has_path_component(path, "rpg_gear") {
+        lint_gear_source(&source, path, ids, errors);
+    } else if has_path_component(path, "skills") || has_path_component(path, "rpg_skills") {
+        lint_skill_source(&source, path, ids, errors);
+    } else if has_path_component(path, "balance") {
+        lint_balance_source(&source, path, ids, errors);
     } else if let Ok(value) = serde_json::from_str::<serde_json::Value>(&source) {
         lint_json_id_value(path, &value, ids, errors);
     } else if let Ok(value) = toml::from_str::<toml::Value>(&source) {
@@ -106,6 +127,11 @@ fn lint_content_file(
         errors.push(format!("{} is not valid content data", path.display()));
     }
     Ok(())
+}
+
+fn has_path_component(path: &Path, name: &str) -> bool {
+    path.components()
+        .any(|component| component.as_os_str() == name)
 }
 
 fn lint_json_id_value(
@@ -137,6 +163,15 @@ fn lint_board(
     }
     for obstacle in &board.obstacles {
         lint_local_id(obstacle.id.as_str(), source, &mut board_local_ids, errors);
+    }
+    for objective in &board.objectives {
+        lint_local_id(objective.id.as_str(), source, &mut board_local_ids, errors);
+        if objective.target == 0 {
+            errors.push(format!(
+                "{source} objective {} target must be positive",
+                objective.id
+            ));
+        }
     }
 }
 
@@ -197,6 +232,181 @@ fn lint_shop_item(
     if item.name.trim().is_empty() || item.description.trim().is_empty() {
         errors.push(format!("{source} shop item requires name and description"));
     }
+}
+
+fn lint_gear_source(
+    source_text: &str,
+    path: &Path,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    let source = path.display().to_string();
+    if let Ok(gear) = toml::from_str::<GearDefinition>(source_text) {
+        lint_gear(
+            gear.id.as_str(),
+            &gear.name,
+            &gear.description,
+            &gear.effects,
+            &source,
+            ids,
+            errors,
+        );
+    } else if let Ok(gear) = serde_json::from_str::<RpgGearContent>(source_text) {
+        lint_gear(
+            gear.id.as_str(),
+            &gear.name,
+            &gear.description,
+            &gear.effects,
+            &source,
+            ids,
+            errors,
+        );
+    } else {
+        errors.push(format!("{} RPG gear schema violation", path.display()));
+    }
+}
+
+fn lint_skill_source(
+    source_text: &str,
+    path: &Path,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    let source = path.display().to_string();
+    if let Ok(skill) = toml::from_str::<RpgSkillDefinition>(source_text) {
+        lint_skill(
+            SkillLintInput {
+                id: skill.id.as_str(),
+                name: &skill.name,
+                description: &skill.description,
+                max_rank: skill.max_rank,
+                effects: &skill.effects,
+            },
+            &source,
+            ids,
+            errors,
+        );
+    } else if let Ok(skill) = serde_json::from_str::<RpgSkillContent>(source_text) {
+        lint_skill(
+            SkillLintInput {
+                id: skill.id.as_str(),
+                name: &skill.name,
+                description: &skill.description,
+                max_rank: skill.max_rank.unwrap_or(1),
+                effects: &skill.effects,
+            },
+            &source,
+            ids,
+            errors,
+        );
+    } else {
+        errors.push(format!("{} RPG skill schema violation", path.display()));
+    }
+}
+
+fn lint_balance_source(
+    source_text: &str,
+    path: &Path,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    let source = path.display().to_string();
+    match toml::from_str::<toml::Value>(source_text) {
+        Ok(value) => lint_balance_value(&value, &source, ids, errors),
+        Err(error) => errors.push(format!(
+            "{} balance schema violation: {error}",
+            path.display()
+        )),
+    }
+}
+
+fn lint_gear(
+    id: &str,
+    name: &str,
+    description: &str,
+    effects: &[ContentId],
+    source: &str,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    lint_id(id, source, ids, errors);
+    if name.trim().is_empty() || description.trim().is_empty() {
+        errors.push(format!("{source} gear requires name and description"));
+    }
+    for effect in effects {
+        lint_reference_id(effect.as_str(), source, errors);
+    }
+}
+
+struct SkillLintInput<'a> {
+    id: &'a str,
+    name: &'a str,
+    description: &'a str,
+    max_rank: u8,
+    effects: &'a [ContentId],
+}
+
+fn lint_skill(
+    skill: SkillLintInput<'_>,
+    source: &str,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    lint_id(skill.id, source, ids, errors);
+    if skill.name.trim().is_empty() || skill.description.trim().is_empty() {
+        errors.push(format!("{source} skill requires name and description"));
+    }
+    if skill.max_rank == 0 {
+        errors.push(format!("{source} skill max_rank must be positive"));
+    }
+    for effect in skill.effects {
+        lint_reference_id(effect.as_str(), source, errors);
+    }
+}
+
+fn lint_balance_value(
+    table: &toml::Value,
+    source: &str,
+    ids: &mut BTreeSet<String>,
+    errors: &mut Vec<String>,
+) {
+    let Some(id) = table.get("id").and_then(|id| id.as_str()) else {
+        errors.push(format!("{source} balance table requires id"));
+        return;
+    };
+    lint_id(id, source, ids, errors);
+    if table
+        .get("version")
+        .and_then(|version| version.as_str())
+        .is_none_or(str::is_empty)
+    {
+        errors.push(format!("{source} balance table requires version"));
+    }
+    if table.as_table().is_none_or(|table| table.len() <= 2) {
+        errors.push(format!("{source} balance table requires tunable entries"));
+    }
+}
+
+#[derive(Deserialize)]
+struct RpgGearContent {
+    id: GearId,
+    name: String,
+    #[allow(dead_code)]
+    slot: GearSlotDefinition,
+    description: String,
+    #[serde(default)]
+    effects: Vec<ContentId>,
+}
+
+#[derive(Deserialize)]
+struct RpgSkillContent {
+    id: SkillId,
+    name: String,
+    description: String,
+    #[serde(default)]
+    max_rank: Option<u8>,
+    #[serde(default)]
+    effects: Vec<ContentId>,
 }
 
 fn lint_id(id: &str, source: &str, ids: &mut BTreeSet<String>, errors: &mut Vec<String>) {
