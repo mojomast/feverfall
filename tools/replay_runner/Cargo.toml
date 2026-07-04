@@ -6,5 +6,9 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+anyhow.workspace = true
+content_schema = { path = "../../crates/content_schema" }
 game_rules = { path = "../../crates/game_rules" }
 physics_core = { path = "../../crates/physics_core" }
+serde.workspace = true
+serde_json.workspace = true

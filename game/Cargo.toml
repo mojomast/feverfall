@@ -6,6 +6,7 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
+bevy = { version = "0.18", default-features = false, features = ["std", "default_app", "bevy_winit", "x11", "multi_threaded", "bevy_render", "bevy_core_pipeline", "bevy_sprite", "bevy_sprite_render", "png"], optional = true }
 board_gen = { path = "../crates/board_gen" }
 content_schema = { path = "../crates/content_schema" }
 feedback_events = { path = "../crates/feedback_events" }
@@ -13,3 +14,8 @@ game_rules = { path = "../crates/game_rules" }
 physics_core = { path = "../crates/physics_core" }
 run_mode = { path = "../crates/run_mode" }
 rpg_mode = { path = "../crates/rpg_mode" }
+serde_json = { workspace = true, optional = true }
+
+[features]
+default = []
+bevy_feel_test = ["dep:bevy", "dep:serde_json"]

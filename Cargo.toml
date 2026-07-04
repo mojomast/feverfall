@@ -6,6 +6,7 @@ members = [
     "crates/run_mode",
     "crates/rpg_mode",
     "crates/feedback_events",
+    "crates/telemetry",
     "crates/content_schema",
     "game",
     "tools/replay_runner",

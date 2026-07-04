@@ -1,0 +1,51 @@
+{
+  "name": "minimal_test",
+  "board": {
+    "id": "boards/minimal_test",
+    "size": { "x": 20.0, "y": 35.56 },
+    "cannon_position": { "x": 10.0, "y": 1.5 },
+    "kill_plane_y": 36.5,
+    "pegs": [
+      {
+        "id": "peg/orange_001",
+        "kind": "Orange",
+        "shape": {
+          "Circle": {
+            "center": { "x": 10.0, "y": 14.0 },
+            "radius": 0.35
+          }
+        }
+      },
+      {
+        "id": "peg/blue_001",
+        "kind": "Blue",
+        "shape": {
+          "Circle": {
+            "center": { "x": 8.0, "y": 16.0 },
+            "radius": 0.35
+          }
+        }
+      }
+    ],
+    "obstacles": [],
+    "bucket": {
+      "center": { "x": 10.0, "y": 34.4 },
+      "width": 3.0,
+      "height": 0.55,
+      "horizontal_speed": 6.0,
+      "motion": "PingPong",
+      "catch_margin": 0.18
+    },
+    "tags": ["test"]
+  },
+  "seed": 0,
+  "shots": [
+    {
+      "aim_angle_radians": 1.5707963267948966,
+      "launch_speed": 17.5,
+      "ball_id": "balls/basic"
+    }
+  ],
+  "expected_hash": "598ff57ca69b031c4e487fdd54d07d7c7f2667d20f66ad1be85351ae58ae0630",
+  "pending_simulator": false
+}
