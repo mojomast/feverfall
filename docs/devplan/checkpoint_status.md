@@ -255,9 +255,9 @@ Completed:
 Next checkpoint:
 - Checkpoint 4.
 
-## Checkpoint 4: In Progress
+## Checkpoint 4: COMPLETE
 
-Status: in integration.
+Status: FEATURE COMPLETE. Final C4 integration reconciled concurrent docs/state/contract changes and all feature-complete exit criteria pass locally. Windows workflow artifact verification remains a release-process follow-up from a pushed C4 ref, not a feature-complete blocker.
 
 Completed:
 - [C4-G] Added the `cargo run -p feverfall_game -- --smoke-full` release gate covering C2 vertical slice, RPG Chapter 1, RPG campaign Chapter 1/3/5, roguelite Acts 1-4, feel-test smoke, content lint, board validation, and all golden replay fixtures.
@@ -274,9 +274,9 @@ Completed:
 [C4-G] blockers / nonlocal actions:
 - GitHub workflow dispatch was available and queued run `28720908116`, but it used the remote `main` workflow before these local C4 changes were pushed. Rerun `.github/workflows/windows-feel-test.yml` from a ref containing this change to produce a Checkpoint 4 Windows artifact with `--smoke-full` verified.
 
-## Checkpoint 4: Content Expansion
+## Checkpoint 4: Content Expansion Complete
 
-Status: in progress. [C4-CONTENT], [C4-RPG-CH2TO5], [C4-ACT4], [C4-VFX2], and [C4-UI] are complete and validated; commit coordination is required because unrelated concurrent C4 changes share tracked files and content directories.
+Status: COMPLETE. [C4-CONTENT], [C4-RPG-CH2TO5], [C4-ACT4], [C4-VFX2], [C4-UI], [C4-QA], and [C4-INTEGRATE] are complete and validated.
 
 [C4-CONTENT] completed:
 - Expanded roguelite relic content to 60 total with exact five-category distribution: Ball 12, Peg 12, Basket 12, Board 12, EconomyCombo 12.
@@ -397,5 +397,55 @@ Status: in progress. [C4-CONTENT], [C4-RPG-CH2TO5], [C4-ACT4], [C4-VFX2], and [C
 
 [C4-UI] blockers / integration notes:
 - No implementation or validation blocker.
+- Commit deferred because remaining uncommitted docs include unrelated concurrent C4 edits in the same files; staging whole files would include other agents' work.
 - Renderer automation remains model/smoke based; the 1280x720 and 1920x1080 layout coverage is represented by `UiViewport::HD` and `UiViewport::FHD` smoke assertions until a full renderer test harness exists.
 - Other C4 agents should consume `PlaceholderScreenSuite`, `FocusList`, and `F3DebugOverlay` rather than adding duplicate UI state contracts.
+
+[C4-QA] completed:
+- Ran the automated feel-survey proxy protocol and wrote `docs/qa/feel_test_results.md`.
+- Audited all golden replay fixtures and wrote `docs/qa/replay_audit.md`.
+- Audited content lint and board validation over the current C4 content pack and wrote `docs/qa/content_audit.md`.
+- Added `telemetry_derivation_and_logging_do_not_mutate_physics_state` to prove telemetry derivation/logging does not mutate physics board/input/events or replay hashes.
+- Produced `docs/qa/pre_release_report.md` with validation commands, exact hashes, known gaps, TODO priorities, and spec success-criteria status.
+
+[C4-QA] validation completed:
+- `cargo test -p telemetry` passes with 7 tests.
+- `cargo run -p content_linter` passes with 242 unique IDs.
+- `cargo run -p board_validator` passes all 80 authored boards.
+- `for replay in tests/golden_replays/*.json; do cargo run -p replay_runner -- --replay "$replay" || exit 1; done` passes for all seven golden fixtures.
+- `cargo fmt --all -- --check` passes.
+- `cargo test --workspace` passes.
+- `cargo run -p feverfall_game -- --smoke` passes.
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` passes.
+
+[C4-QA] hashes:
+- Golden replays: minimal `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical slice `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, Act 1 two-board `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`, RPG defensive `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`, RPG implementation `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`, roguelite defensive `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`, roguelite implementation `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+- Smoke: C2 `18202124e6b686d8`, feel replay `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`, RPG campaign `04029810211125c5`, roguelite Act 1-3 `e72374145338c3b3`, roguelite full-run `152fc850303d8356`.
+
+[C4-QA] blockers / integration notes:
+- No validation blocker.
+- Human-only feel and comprehension benchmarks remain open and are tagged in `docs/qa/pre_release_report.md`.
+- Commit not created because the worktree contains unrelated concurrent C4 edits in shared tracked files and untracked content directories; staging whole files would include other agents' work.
+
+[C4-INTEGRATE] final validation completed:
+- `cargo fmt --all -- --check` passes.
+- `cargo test --workspace` passes.
+- `cargo clippy --workspace --all-targets -- -D warnings` passes.
+- `cargo run -p feverfall_game -- --smoke-full` exits 0 with `smoke-full summary: PASS checks=12 replays=7`.
+- `cargo run -p content_linter` passes with 242 unique IDs.
+- `cargo run -p board_validator` passes all 80 authored boards.
+- `cargo run -p replay_runner` preserves the default minimal replay hash.
+- `for replay in tests/golden_replays/*.json; do cargo run -p replay_runner -- --replay "$replay" || exit 1; done` passes for all seven golden fixtures.
+
+[C4-INTEGRATE] final hashes and counts:
+- Golden replays: minimal `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical slice `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, Act 1 two-board `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`, RPG defensive `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`, RPG implementation `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`, roguelite defensive `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`, roguelite implementation `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+- Smoke: C2 `18202124e6b686d8`, RPG Chapter 1 `3364e243ba2065f4`, RPG campaign `04029810211125c5`, roguelite Act 1-3 `e72374145338c3b3`, roguelite Acts 1-4 `152fc850303d8356`, feel-test replay `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
+- Content linter: 242 unique IDs.
+- Board validator: 80 authored boards.
+
+[C4-INTEGRATE] known gaps / release-process follow-up:
+- Human feel/comprehension, performance timing, and cohort/balance benchmarks remain documented in `docs/qa/pre_release_report.md`.
+- The Checkpoint 4 Windows artifact workflow must be rerun from a pushed C4 ref; local Linux validation cannot verify that nonlocal artifact.
+
+Next checkpoint:
+- None queued in this devplan. Checkpoint 4 is COMPLETE / FEATURE COMPLETE.

@@ -1,6 +1,6 @@
 # Feverfall
 
-Feverfall is a deterministic Peggle-style ball-drop prototype with two progression modes: a roguelite run mode and a persistent RPG campaign mode. The project is currently in Checkpoint 4 integration, with physics, board validation, replay hashing, content linting, RPG campaign coverage, roguelite Acts 1-4 smoke coverage, and placeholder UI/VFX/audio systems under automated gates.
+Feverfall is a deterministic Peggle-style ball-drop prototype with two progression modes: a roguelite run mode and a persistent RPG campaign mode. Checkpoint 4 is feature complete, with physics, board validation, replay hashing, content linting, RPG campaign coverage, roguelite Acts 1-4 smoke coverage, and placeholder UI/VFX/audio systems under automated gates.
 
 ## Current Status
 

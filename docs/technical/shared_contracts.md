@@ -8,7 +8,7 @@
 - `board_gen`: generation parameters and board validation reports.
 - `run_mode`: `RunState`, run nodes, reward offers/choices, Act 1 slice helpers, relic modifier trait.
 - `rpg_mode`: `CharacterState`, stats, Chapter 1 XP/leveling, gear inventory/equip state, active skills, full RPG campaign chapter catalog, mastery-mode unlock state, and campaign save/load.
-- `feedback_events`: `FeedbackEvent`, accessibility feedback flags, gameplay-to-feedback mapping. Runtime feedback/VFX coverage uses existing feedback kinds for C3 peg, bucket, combo, long-shot, near-miss, final-orange, fever, and failure triggers.
+- `feedback_events`: `FeedbackEvent`, accessibility feedback flags, gameplay-to-feedback mapping. Runtime feedback/VFX coverage uses explicit C4 feedback kinds for ball launch, peg hits, bucket catch, combo thresholds, long shot, lucky bounce, near-miss, final-orange tension, Extreme Fever, relic triggers, and failure.
 - `telemetry`: telemetry envelopes, local JSONL logger, replay tags, QA analytics event vocabulary.
 
 ## Content ID Convention
@@ -122,4 +122,4 @@ Feature crates must depend on these owners instead of creating private lookalike
 - C2 golden hashes are default replay `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical-slice replay `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, and Act 1 two-board replay `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`.
 - C3 defensive smoke replay hashes are RPG Chapter 1 `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f` and roguelite 3-act `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`.
 - C3 RPG implementation smoke fixture `tests/golden_replays/rpg_ch1_smoke.replay.json` covers Chapter 1 boards 1 and 5 with hash `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`.
-- `cargo run -p feverfall_game -- --smoke-full` is the C4 release smoke contract. Exit code 0 means the C2 vertical slice, RPG Chapter 1 plus campaign Chapter 1/3/5 smoke, roguelite Acts 1-4 smoke, feel-test smoke, full content lint, board validation, and every golden replay fixture have all passed.
+- `cargo run -p feverfall_game -- --smoke-full` is the C4 release smoke contract. Exit code 0 means the C2 vertical slice, RPG Chapter 1 plus campaign Chapter 1/3/5 smoke, roguelite Acts 1-4 smoke, feel-test smoke, full content lint, board validation, and every golden replay fixture have all passed. Final C4 integration confirmed `smoke-full summary: PASS checks=12 replays=7`, 242 unique content IDs, and 80 authored boards.

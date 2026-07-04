@@ -2,7 +2,7 @@
 
 ## Current Checkpoint
 
-Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and locally validated; [C4-UI] full placeholder screen coverage is complete and validated; Windows artifact production requires rerunning the workflow from a pushed C4 ref.
+STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 subagents completed, artifacts produced, final integration reconciled, and the Checkpoint 4 feature-complete exit criteria pass locally. Windows artifact production still requires rerunning the workflow from a pushed C4 ref; this is a release-process gap, not a feature-complete blocker.
 
 ## Completed Since Last Session
 
@@ -55,6 +55,8 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - [C4-RPG-CH2TO5] Added RPG Chapters 2-5 campaign catalog support in `crates/rpg_mode`: Ch2 has 12 obstacle/active-skill/score-objective boards, Ch3 has 15 gear-synergy boards, Ch4 has 15 multi-objective boards, and Ch5 has 4 normalized-stat mastery boards with leaderboard hashes. Campaign completion now requires all 5 chapters and unlocks the `campaign/mastery_mode_unlocked` flag on `CharacterState`.
 - [C4-VFX2] Completed full reactive feedback trigger map: explicit launch/long-shot/lucky-bounce feedback kinds, five audio buses, combo pitch cap/chord clustering, combo rail state, relic category flash colors, board archetype ambience, and accessibility reductions.
 - [C4-UI] Added production-placeholder UI screen models for main menu, settings, roguelite map/shop/forge/event/relic bar, RPG chapter/gear/skill/campaign screens, keyboard focus contracts, 1280x720/1920x1080 layout smoke coverage, and F3 debug overlay fields.
+- [C4-QA] Completed the automated pre-release QA pass: feel-test proxy survey, all-golden replay audit, content/board audit, telemetry immutability test, pre-release report, workspace validation, and smoke hash reconciliation.
+- [C4-INTEGRATE] Reconciled concurrent C4 docs/state/contract changes, reran the feature-complete exit gate, confirmed 242 unique content IDs and 80 authored boards, updated final status docs, and prepared the final C4 reconciliation commit.
 
 ## Active Workstreams
 
@@ -62,12 +64,14 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - Checkpoint 2 Core Loop: deterministic vertical-slice smoke session passing through physics, game rules, node progression, reward selection, run state, RPG state, HUD, feedback, telemetry, run summary, and replay/run-summary hashes.
 - Content / Progression: Act 1 slice defaults, node path, reward offers, relic/ball/shop content, and boss board validation are available in shared contracts and content data.
 - UI / Feedback / Telemetry: node-map, reward, run-summary, slice summaries, and telemetry mappings pass automated validation; human interactive-flow confirmation is recorded.
-- Checkpoint gate: Checkpoint 2 COMPLETE. Human approval: interactive flow confirmed.
+- Checkpoint gate: Checkpoint 4 COMPLETE / FEATURE COMPLETE. Human-only release benchmarks remain documented gaps, and Windows workflow artifact verification is pending from a pushed C4 ref.
 - Checkpoint 3: COMPLETE. [C3-BALANCE], [C3-ROGUELITE], [C3-RPG], [C3-SEP], [C3-G], and [C3-INTEGRATE] complete with required validations passing.
 - [C4-CONTENT]: COMPLETE. Content linter, board validator, and touched crate tests pass with full C4 content quantity targets met.
 - [C4-RPG-CH2TO5]: COMPLETE. Default smoke prints RPG Ch1 board 1, Ch3 board 1, and Ch5 board 1 campaign summaries with hashes before the preserved Chapter 1 save/load smoke summary.
 - [C4-VFX2]: COMPLETE. Bevy feel-test clippy and smoke pass with `c4_vfx_triggers=21` covering the full reactive feedback trigger map.
 - [C4-UI]: COMPLETE. Game tests, Bevy feel-test strict clippy, and Bevy feel-test smoke pass with `screens=13`, `keyboard=true`, `layout=true`, and `f3_fields=5` in registration smoke.
+- [C4-QA]: COMPLETE. Workspace tests, all golden replays, content linter, board validator, default smoke, feature smoke, and QA reports pass; human-only feel benchmarks remain explicitly marked as gaps.
+- [C4-INTEGRATE]: COMPLETE. Final formatting, workspace test, strict clippy, `--smoke-full`, content lint, board validation, and all-golden replay gates pass.
 - Tooling gate: CI/local validation includes default, vertical-slice, Act 1 two-board, RPG Chapter 1, and roguelite 3-act replay hash gates; content lint; board validation; roguelite/RPG seed-browser smokes; default/RPG/roguelite game smoke commands; and Bevy feel-test smoke/clippy gates.
 
 ## Subagents Dispatched
@@ -113,6 +117,8 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - [C4-RPG-CH2TO5] RPG Chapters 2-5 Agent: campaign catalog, mastery unlock contract, campaign smoke expansion, tests, shared-contract docs, and checkpoint status updates.
 - [C4-VFX2] Full Juice Polish Agent: reactive feedback trigger map, VFX/audio cue markers, combo rail, relic flash colors, board ambience, tests, docs, and validation updates.
 - [C4-UI] Full UI Polish Agent: production-placeholder screen models, keyboard focus, layout smoke, F3 debug overlay, validation, and documentation updates.
+- [C4-QA] Full QA Pass Agent: automated pre-release QA reports, replay/content/telemetry audits, workspace validation, and smoke-hash reconciliation.
+- [C4-INTEGRATE] Final Checkpoint 4 Integration & Feature-Complete Validation Agent: final docs/state reconciliation, local exit-gate validation, feature-complete status update, and final commit.
 
 ## Files Changed
 
@@ -191,6 +197,10 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - `game/assets/content/boards/c4_rpg_ch3/*`
 - `game/assets/content/boards/c4_rpg_ch4/*`
 - `game/assets/content/boards/c4_rpg_ch5/*`
+- `docs/qa/feel_test_results.md`
+- `docs/qa/replay_audit.md`
+- `docs/qa/content_audit.md`
+- `docs/qa/pre_release_report.md`
 
 ## Validation Commands Run
 
@@ -268,6 +278,25 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - [C4-ACT4] `cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_act1to3_smoke.replay.json`
 - [C4-ACT4] `cargo run -p feverfall_game -- --smoke`
 - [C4-ACT4] `cargo run -p feverfall_game -- --smoke-full`
+- [C4-UI] `cargo test -p feverfall_game`
+- [C4-UI] `cargo clippy -p feverfall_game --features bevy_feel_test -- -D warnings`
+- [C4-UI] `cargo run -p feverfall_game --features bevy_feel_test -- --smoke`
+- [C4-QA] `cargo test -p telemetry`
+- [C4-QA] `cargo run -p content_linter`
+- [C4-QA] `cargo run -p board_validator`
+- [C4-QA] `for replay in tests/golden_replays/*.json; do cargo run -p replay_runner -- --replay "$replay" || exit 1; done`
+- [C4-QA] `cargo fmt --all -- --check`
+- [C4-QA] `cargo test --workspace`
+- [C4-QA] `cargo run -p feverfall_game -- --smoke`
+- [C4-QA] `cargo run -p feverfall_game --features bevy_feel_test -- --smoke`
+- [C4-INTEGRATE] `cargo fmt --all -- --check`
+- [C4-INTEGRATE] `cargo test --workspace`
+- [C4-INTEGRATE] `cargo clippy --workspace --all-targets -- -D warnings`
+- [C4-INTEGRATE] `cargo run -p feverfall_game -- --smoke-full`
+- [C4-INTEGRATE] `cargo run -p content_linter`
+- [C4-INTEGRATE] `cargo run -p board_validator`
+- [C4-INTEGRATE] `cargo run -p replay_runner`
+- [C4-INTEGRATE] `for replay in tests/golden_replays/*.json; do cargo run -p replay_runner -- --replay "$replay" || exit 1; done`
 
 ## Passing Validation
 
@@ -338,7 +367,19 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - [C4-ACT4] `cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_act1to3_smoke.replay.json` preserves `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
 - [C4-ACT4] `cargo run -p feverfall_game -- --smoke` passes and prints roguelite Act 1-3 summary hash `e72374145338c3b3`, Act 4 derived seed `14462389677421375956`, and full Act 1-4 summary hash `152fc850303d8356`.
 - [C4-ACT4] `cargo run -p feverfall_game -- --smoke-full` passes all included content, board, and replay gates with `smoke-full summary: PASS checks=12 replays=7`.
+- [C4-UI] `cargo test -p feverfall_game` passes with 47 tests, including placeholder screen suite coverage and F3 overlay field coverage.
+- [C4-UI] `cargo clippy -p feverfall_game --features bevy_feel_test -- -D warnings` passes after wiring placeholder audio/VFX/UI hooks into registration smoke and restoring the Act 4 full-smoke hash helper.
+- [C4-UI] `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` passes; plugin registration reports `screens=13`, `keyboard=true`, `layout=true`, and `f3_fields=5`.
 - [C4-ACT4] Artifact SHA-256: `crates/run_mode/src/lib.rs` `1e3de118d76c3f4601a7bbe71c9fcc0c589048c028b77e871aef1a8741b8a63e`; `game/src/vertical_slice.rs` `8feb8200bc147b96b2578665f4251e5812e6568f6402cd4773da74599e00aa39`; `game/src/main.rs` `2fe8c1897af5822f26b710bebfc9977f6cc782fe4d9bff2d94fd798fb9066068`; `docs/technical/shared_contracts.md` `c494c0adbea1369d5b498370c718da20620edd0dec70c0066a775f52a19a5900`; `docs/devplan/checkpoint_status.md` `baace75b31fd30c83dd614c648b05c1c3b1e99960986a4e1dd55108ef2eeb811`.
+- [C4-QA] `cargo test --workspace` passes after QA additions and C4 integration fixes. Notable final counts: `board_gen` 6 passed, `feverfall_game` 46 passed, `physics_core` 16 passed, `rpg_mode` 8 passed plus mode-separation tests, `run_mode` 16 passed plus mode-separation tests, and `telemetry` 7 passed.
+- [C4-QA] `cargo test -p telemetry` passes with the new `telemetry_derivation_and_logging_do_not_mutate_physics_state` regression test.
+- [C4-QA] All golden replays match: minimal `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical slice `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, Act 1 two-board `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`, RPG defensive `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`, RPG implementation `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`, roguelite defensive `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`, and roguelite implementation `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+- [C4-QA] `cargo run -p content_linter` passes with 242 unique IDs; `cargo run -p board_validator` passes 80 authored boards.
+- [C4-QA] `cargo run -p feverfall_game -- --smoke` and `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` pass. Current smoke hashes: C2 `18202124e6b686d8`, feel replay `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`, RPG campaign `04029810211125c5`, roguelite Act 1-3 `e72374145338c3b3`, and roguelite full-run `152fc850303d8356`.
+- [C4-INTEGRATE] Final feature-complete gate passes: `cargo fmt --all -- --check`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo run -p feverfall_game -- --smoke-full`, `cargo run -p content_linter`, `cargo run -p board_validator`, default `cargo run -p replay_runner`, and the all-golden replay loop.
+- [C4-INTEGRATE] `cargo run -p feverfall_game -- --smoke-full` exits 0 with `smoke-full summary: PASS checks=12 replays=7`. Hashes: C2 `18202124e6b686d8`, RPG Chapter 1 `3364e243ba2065f4`, RPG campaign `04029810211125c5`, roguelite Act 1-3 `e72374145338c3b3`, roguelite Acts 1-4 `152fc850303d8356`, feel-test replay `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
+- [C4-INTEGRATE] Golden replay hashes confirmed: minimal `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical slice `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, Act 1 two-board `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`, RPG defensive `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`, RPG implementation `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`, roguelite defensive `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`, and roguelite implementation `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
+- [C4-INTEGRATE] Content linter passes with 242 unique IDs; board validator passes all 80 authored boards.
 
 ## Failing Validation
 
@@ -346,6 +387,10 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - None for [C4-CONTENT] validation.
 - None for [C4-RPG-CH2TO5] validation. Commit is blocked by unrelated concurrent C4 worktree changes sharing tracked files and adding content directories; staging whole files would include other agents' work.
 - None for [C4-ACT4] validation.
+- None for [C4-UI] validation.
+- None for [C4-VFX2] validation.
+- None for [C4-QA] validation. Commit is blocked by unrelated concurrent C4 worktree changes sharing tracked files and adding content directories; staging whole files would include other agents' work.
+- None for [C4-INTEGRATE] validation. Checkpoint 4 is feature complete.
 
 ## Environment Notes
 
@@ -354,8 +399,12 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - [C3-BALANCE] `cargo run -p balance_sim --release` could not use repo `target/release` because `.cargo-lock` returned permission denied; the full simulation succeeded with `CARGO_TARGET_DIR=/tmp/opencode/feverfall-target`.
 - [C4-RPG-CH2TO5] Concurrent C4 content/tool/runtime changes were present during validation. This agent avoided adding duplicate board JSON IDs; Chapter 2-5 board IDs live in the `rpg_mode` catalog as `boards/rpg_ch2_*`, `boards/rpg_ch3_*`, `boards/rpg_ch4_*`, and `boards/rpg_ch5_mastery_*` while the concurrent content pack uses `boards/c4_rpg_*`.
 - [C4-CONTENT] New authored content uses `boards/c4_*`, `balls/c4/*`, `gear/c4/*`, and `skills/c4/*` IDs to avoid collisions with [C4-RPG-CH2TO5] and future [C4-ACT4] additions.
+- [C4-VFX2] Shared `feedback_events::FeedbackKind` now has explicit `BallLaunch`, `LongShot`, and `LuckyBounce` variants; downstream agents should avoid routing those cues through `ComboThreshold`.
 - [C4-ACT4] `MetaProgressionSave` now serializes `mastery_records`; no migration/backward-compatibility shim was added because there is no shipped persisted roguelite meta save requirement yet.
 - [C4-ACT4] Act 4 final boss mechanic contract is `boss_mechanics/act4/final_seed_row_tempo`, combining `ScriptedObstacleRow` and `BucketTempoShift` for [C4-CONTENT] compatibility.
+- [C4-UI] Renderer automation is currently model/smoke based. The UI contract smoke covers 1280x720 and 1920x1080 through `UiViewport::HD` and `UiViewport::FHD`.
+- [C4-QA] Human-only feel and comprehension benchmarks remain open; automated proxy results are in `docs/qa/feel_test_results.md` and status/gaps are in `docs/qa/pre_release_report.md`.
+- [C4-INTEGRATE] Final validation was run locally on Linux. The native Windows workflow/artifact could not be locally verified because it must be rerun from a pushed ref containing the C4 workflow changes.
 
 ## Blockers
 
@@ -369,6 +418,10 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - None for [C4-CONTENT] implementation or validation. Commit may need coordination because concurrent C4 changes touched shared tracked files and observed the new content directories.
 - None for [C4-RPG-CH2TO5] implementation or validation. Commit deferred because the worktree contains unrelated concurrent C4 changes in shared files and untracked content directories.
 - None for [C4-ACT4] implementation or validation. Commit decision pending git inspection because concurrent C4 agents have changed shared tracked files and content directories.
+- None for [C4-UI] implementation or validation. Commit deferred because `ORCHESTRATOR_STATE.md` and `docs/technical/shared_contracts.md` contain unrelated concurrent C4 documentation edits; staging the full files would include other agents' work.
+- None for [C4-VFX2] implementation or validation. Commit deferred because `ORCHESTRATOR_STATE.md` currently contains unrelated concurrent [C4-UI] edits; staging the full file would include other agents' work.
+- None for [C4-QA] implementation or validation. Commit deferred because the worktree contains unrelated concurrent C4 edits in shared tracked files and untracked content directories.
+- None for [C4-INTEGRATE] feature-complete validation.
 
 ## Decisions Needed From Human
 
@@ -435,10 +488,15 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - Roguelite Acts 1-4 full-run summary: `152fc850303d8356`
 - Feel-test replay: `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`
 
+## Last Content / Board Counts
+
+- Content linter: `242` unique IDs.
+- Board validator: `80` authored boards passed.
+
 ## Next Integration Target
 
-- Continue Checkpoint 4 integration; rerun Windows workflow from a pushed C4 ref.
+- None. Checkpoint 4 is FEATURE COMPLETE. Rerun the Windows workflow from a pushed C4 ref as a release-process follow-up.
 
 ## Next Parallel Dispatch
 
-- Integrate remaining C4 agent outputs against `--smoke-full`; rerun `cargo run -p feverfall_game -- --smoke-full` after content/mode changes and update golden/docs only when hashes intentionally change.
+- None unless a new release-process agent is dispatched for the Windows artifact workflow or post-C4 release packaging.
