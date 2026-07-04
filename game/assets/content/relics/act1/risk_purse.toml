@@ -1,0 +1,7 @@
+id = "relics/act1/risk_purse"
+name = "Risk Purse"
+category = "EconomyCombo"
+rarity = "Rare"
+act = 1
+description = "Winning a board with two or fewer balls left grants bonus coins and sparks."
+effects = ["effects/economy/clutch_clear_payout"]

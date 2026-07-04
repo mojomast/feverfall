@@ -1,0 +1,7 @@
+id = "relics/act1/wide_cup_rim"
+name = "Wide Cup Rim"
+category = "Basket"
+rarity = "Common"
+act = 1
+description = "Basket width increases slightly while you have four or fewer balls."
+effects = ["effects/basket/low_ball_width"]

@@ -1,0 +1,7 @@
+id = "relics/act1/cartographer_thread"
+name = "Cartographer Thread"
+category = "Board"
+rarity = "Rare"
+act = 1
+description = "Preview the boss board tag set when entering the Act 1 shop."
+effects = ["effects/board/boss_tag_preview"]

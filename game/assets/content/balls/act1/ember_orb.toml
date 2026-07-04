@@ -1,0 +1,12 @@
+id = "balls/act1/ember_orb"
+name = "Ember Orb"
+family = "ball_families/ember"
+rarity = "Rare"
+description = "First orange hit each shot marks adjacent blue pegs for bonus score."
+effects = ["effects/ball/orange_ember_mark"]
+
+[stats]
+radius = 0.22
+mass = 1.0
+launch_speed_multiplier = 1.01
+restitution_multiplier = 1.02

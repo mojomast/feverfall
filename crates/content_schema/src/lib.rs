@@ -124,6 +124,7 @@ id_newtype!(RelicId);
 id_newtype!(SkillId);
 id_newtype!(GearId);
 id_newtype!(ContentPackId);
+id_newtype!(ShopItemId);
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BoardDefinition {
@@ -216,6 +217,71 @@ pub struct ContentManifest {
     pub entries: Vec<ContentId>,
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RelicDefinition {
+    pub id: RelicId,
+    pub name: String,
+    pub category: RelicCategory,
+    pub rarity: Rarity,
+    pub act: u8,
+    pub description: String,
+    pub effects: Vec<ContentId>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RelicCategory {
+    Ball,
+    Peg,
+    Basket,
+    Board,
+    EconomyCombo,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BallVariantDefinition {
+    pub id: BallId,
+    pub name: String,
+    pub family: ContentId,
+    pub rarity: Rarity,
+    pub description: String,
+    pub stats: BallStats,
+    pub effects: Vec<ContentId>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BallStats {
+    pub radius: Scalar,
+    pub mass: Scalar,
+    pub launch_speed_multiplier: Scalar,
+    pub restitution_multiplier: Scalar,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ShopItemDefinition {
+    pub id: ShopItemId,
+    pub name: String,
+    pub act: u8,
+    pub item_type: ShopItemType,
+    pub price_coins: u16,
+    pub stock_weight: u16,
+    pub description: String,
+    pub grants: ContentId,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ShopItemType {
+    Relic,
+    Ball,
+    Service,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Rarity {
+    Common,
+    Uncommon,
+    Rare,
+}
+
 pub fn minimal_test_board() -> BoardDefinition {
     BoardDefinition {
         id: BoardId::new("boards/minimal_test").expect("static id is valid"),
@@ -277,5 +343,23 @@ mod tests {
         let parsed: BoardDefinition = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed, board);
+    }
+
+    #[test]
+    fn relic_definition_round_trips_json() {
+        let relic = RelicDefinition {
+            id: RelicId::new("relics/act1/test_relic").unwrap(),
+            name: "Test Relic".to_string(),
+            category: RelicCategory::Ball,
+            rarity: Rarity::Common,
+            act: 1,
+            description: "A schema smoke relic.".to_string(),
+            effects: vec![ContentId::new("effects/test").unwrap()],
+        };
+
+        let json = serde_json::to_string(&relic).unwrap();
+        let parsed: RelicDefinition = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed, relic);
     }
 }

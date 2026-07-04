@@ -1,0 +1,7 @@
+id = "relics/act1/ghost_thread"
+name = "Ghost Thread"
+category = "Ball"
+rarity = "Rare"
+act = 1
+description = "Once per board, a no-score blue peg becomes sensor-only for the next shot preview."
+effects = ["effects/ball/temporary_ghost_lane"]

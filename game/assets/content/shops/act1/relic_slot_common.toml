@@ -1,0 +1,8 @@
+id = "shops/act1/relic_slot_common"
+name = "Common Relic Shelf"
+act = 1
+item_type = "Relic"
+price_coins = 45
+stock_weight = 60
+description = "Offers a common Act 1 relic from the starter economy pool."
+grants = "relics/act1/copper_interest"

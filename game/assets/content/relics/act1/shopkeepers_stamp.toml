@@ -1,0 +1,7 @@
+id = "relics/act1/shopkeepers_stamp"
+name = "Shopkeeper's Stamp"
+category = "EconomyCombo"
+rarity = "Uncommon"
+act = 1
+description = "The first Act 1 shop purchase costs less if you cleared the previous board."
+effects = ["effects/economy/first_shop_discount"]

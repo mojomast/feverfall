@@ -1,0 +1,7 @@
+id = "relics/act1/purple_pin"
+name = "Purple Pin"
+category = "Peg"
+rarity = "Rare"
+act = 1
+description = "Purple peg bonus persists for one extra shot after it is cleared."
+effects = ["effects/peg/purple_bonus_carry"]

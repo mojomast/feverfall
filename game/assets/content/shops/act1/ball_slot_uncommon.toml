@@ -1,0 +1,8 @@
+id = "shops/act1/ball_slot_uncommon"
+name = "Uncommon Ball Crate"
+act = 1
+item_type = "Ball"
+price_coins = 55
+stock_weight = 35
+description = "Adds a utility Act 1 ball variant to the run inventory."
+grants = "balls/act1/splitter_orb"

@@ -1,0 +1,7 @@
+id = "relics/act1/lane_lantern"
+name = "Lane Lantern"
+category = "Board"
+rarity = "Common"
+act = 1
+description = "The first-bounce preview highlights the nearest orange lane."
+effects = ["effects/board/orange_lane_hint"]

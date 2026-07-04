@@ -1,0 +1,12 @@
+id = "balls/act1/rubber_orb"
+name = "Rubber Orb"
+family = "ball_families/rubber"
+rarity = "Common"
+description = "Higher rebound for noisy peg chains and risky bucket angles."
+effects = ["effects/ball/rubber_rebound"]
+
+[stats]
+radius = 0.22
+mass = 0.95
+launch_speed_multiplier = 1.0
+restitution_multiplier = 1.08

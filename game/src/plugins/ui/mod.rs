@@ -222,6 +222,51 @@ pub enum SliceProgressionOutcome {
     BoardLost,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RunSessionSummary {
+    pub run_id: ContentId,
+    pub act: u8,
+    pub current_node_index: u16,
+    pub visited_node_count: usize,
+    pub relic_count: usize,
+    pub ball_count: usize,
+    pub shots: u32,
+    pub hearts: u32,
+    pub coins: u32,
+    pub sparks: u32,
+    pub xp: u64,
+    pub equipped_skill_count: usize,
+    pub total_score: Score,
+}
+
+impl RunSessionSummary {
+    pub fn from_states(
+        run_state: &RunState,
+        character_state: &CharacterState,
+        total_score: Score,
+    ) -> Self {
+        Self {
+            run_id: run_state.run_id.clone(),
+            act: run_state.act,
+            current_node_index: run_state.node_index,
+            visited_node_count: run_state.visited_nodes.len(),
+            relic_count: run_state.relics.len(),
+            ball_count: run_state.balls.len(),
+            shots: run_state.resources.shots,
+            hearts: run_state.resources.hearts,
+            coins: run_state.resources.coins,
+            sparks: run_state.resources.sparks,
+            xp: character_state.xp,
+            equipped_skill_count: character_state
+                .unlocked_skills
+                .iter()
+                .filter(|skill| skill.equipped)
+                .count(),
+            total_score,
+        }
+    }
+}
+
 impl HudState {
     pub fn mock_from_states(
         board: &BoardDefinition,
@@ -535,5 +580,40 @@ mod tests {
         assert_eq!(completion.hit_pegs, result.summary.pegs_hit.len());
         assert_eq!(completion.caught_bucket, result.summary.caught_bucket);
         assert_eq!(completion.feedback_cues, 0);
+    }
+
+    #[test]
+    fn run_session_summary_populates_full_interactive_slice_fields() {
+        let mut run_state = RunState::act1_slice(0xC2_FE);
+        let nodes = run_mode::act1_slice_nodes();
+        run_state.advance_to_node(nodes[0].clone());
+        run_state.advance_to_node(nodes[1].clone());
+        run_state.advance_to_node(nodes[2].clone());
+        run_state.apply_reward(&run_mode::Reward::Coins(12));
+        run_state.apply_reward(&run_mode::Reward::Relic(
+            RelicId::new("relics/act1/orange_echo").unwrap(),
+        ));
+        run_state.apply_reward(&run_mode::Reward::Ball(BallId::new("balls/spark").unwrap()));
+        run_state.resources.shots = 6;
+        run_state.resources.sparks = 9;
+
+        let mut character_state = CharacterState::act1_slice();
+        character_state.xp = 9;
+
+        let summary = RunSessionSummary::from_states(&run_state, &character_state, 7_500);
+
+        assert_eq!(summary.run_id, run_state.run_id);
+        assert_eq!(summary.act, 1);
+        assert_eq!(summary.current_node_index, 3);
+        assert_eq!(summary.visited_node_count, 3);
+        assert_eq!(summary.relic_count, 2);
+        assert_eq!(summary.ball_count, 2);
+        assert_eq!(summary.shots, 6);
+        assert_eq!(summary.hearts, 3);
+        assert_eq!(summary.coins, 22);
+        assert_eq!(summary.sparks, 9);
+        assert_eq!(summary.xp, 9);
+        assert_eq!(summary.equipped_skill_count, 1);
+        assert_eq!(summary.total_score, 7_500);
     }
 }

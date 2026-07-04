@@ -1,0 +1,12 @@
+id = "balls/act1/splitter_orb"
+name = "Splitter Orb"
+family = "ball_families/splitter"
+rarity = "Uncommon"
+description = "Creates a low-power child trajectory after the first green peg hit."
+effects = ["effects/ball/green_split_child"]
+
+[stats]
+radius = 0.21
+mass = 0.9
+launch_speed_multiplier = 1.02
+restitution_multiplier = 0.99

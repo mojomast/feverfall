@@ -73,6 +73,17 @@ pub enum TelemetryEvent {
     ReplayTagged {
         tag: ReplayTag,
     },
+    RunEnded {
+        final_score: Score,
+        boards_cleared: u32,
+        oranges_cleared: u32,
+        bucket_catches: u32,
+        relics_collected: Vec<RelicId>,
+        xp_gained: u64,
+        character_level: u32,
+        run_duration_shots: u32,
+        replay_hash: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -139,6 +150,10 @@ impl<W: Write> JsonlTelemetryLogger<W> {
         self.writer.write_all(b"\n")?;
         self.sequence += 1;
         Ok(())
+    }
+
+    pub fn flush(&mut self) -> io::Result<()> {
+        self.writer.flush()
     }
 
     pub fn into_inner(self) -> W {
@@ -271,6 +286,47 @@ mod tests {
     }
 
     #[test]
+    fn telemetry_events_and_replay_tags_do_not_change_replay_hash() {
+        let board = minimal_test_board();
+        let input = shot_input();
+        let before = simulate_shot(321, &board, &input);
+
+        let mut logger = JsonlTelemetryLogger::new(Vec::new(), "run-session-determinism-check");
+        logger
+            .log(TelemetryEvent::ShotScoreResolved {
+                base_score: 1_000,
+                fever_multiplier: 1,
+                combo_multiplier: 1,
+                final_score: 1_000,
+            })
+            .unwrap();
+        logger
+            .log(TelemetryEvent::RelicChosen {
+                relic: RelicId::new("relics/act1/orange_echo").unwrap(),
+            })
+            .unwrap();
+        logger
+            .log(TelemetryEvent::ReplayTagged {
+                tag: ReplayTag {
+                    replay_hash: before.summary.replay_hash.clone(),
+                    board: board.id.clone(),
+                    seed: 321,
+                    labels: vec![
+                        ReplayLabel::DeterminismBaseline,
+                        ReplayLabel::Custom("run-session:act1-node-02".to_owned()),
+                    ],
+                    notes: Some("Two-board run-session QA tag".to_owned()),
+                },
+            })
+            .unwrap();
+        let _jsonl = logger.into_inner();
+
+        let after = simulate_shot(321, &board, &input);
+
+        assert_eq!(before.summary.replay_hash, after.summary.replay_hash);
+    }
+
+    #[test]
     fn shot_summary_maps_to_vertical_slice_result_event() {
         let board = minimal_test_board();
         let input = shot_input();
@@ -321,5 +377,29 @@ mod tests {
                 reason: ContentId::new("loss/out_of_shots").unwrap(),
             })
         );
+    }
+
+    #[test]
+    fn run_ended_telemetry_event_serializes_summary_fields() {
+        let event = TelemetryEvent::RunEnded {
+            final_score: 42_000,
+            boards_cleared: 2,
+            oranges_cleared: 25,
+            bucket_catches: 4,
+            relics_collected: vec![RelicId::new("relics/act1/spark_catcher").unwrap()],
+            xp_gained: 18,
+            character_level: 3,
+            run_duration_shots: 11,
+            replay_hash: "abc123".to_owned(),
+        };
+
+        let json = serde_json::to_string(&event).unwrap();
+        let parsed: TelemetryEvent = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed, event);
+        assert!(json.contains("RunEnded"));
+        assert!(json.contains("final_score"));
+        assert!(json.contains("relics/act1/spark_catcher"));
+        assert!(json.contains("run_duration_shots"));
     }
 }

@@ -1,0 +1,12 @@
+id = "balls/act1/ghost_orb"
+name = "Ghost Orb"
+family = "ball_families/ghost"
+rarity = "Uncommon"
+description = "The first blue peg hit each shot scores but does not bounce the ball."
+effects = ["effects/ball/first_blue_sensor"]
+
+[stats]
+radius = 0.20
+mass = 0.85
+launch_speed_multiplier = 1.04
+restitution_multiplier = 0.96

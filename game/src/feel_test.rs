@@ -2,15 +2,22 @@ use std::f64::consts::PI;
 
 use bevy::prelude::*;
 use content_schema::{BallId, BoardDefinition, ObstacleKind, PegKind, Score, ShapeDef};
-use feedback_events::AccessibilityFeedbackFlags;
+use feedback_events::{AccessibilityFeedbackFlags, FeedbackEvent};
 use physics_core::{
     predict_first_bounce, sample_shot_trajectory, simulate_shot, PhysicsEvent, ShotInput,
     ShotSummary,
 };
 
 use crate::plugins::{
-    feedback::play_shot_feedback, feel_test::TrajectoryPlaybackCursor, ui::SliceCompletionSummary,
+    feedback::play_shot_feedback,
+    feel_test::TrajectoryPlaybackCursor,
+    reward_ui::{
+        act1_feel_test_relic_offer, RewardCardModel, RewardChoiceController, RewardChoiceScreen,
+        RewardChoiceTransition,
+    },
+    ui::{SliceCompletionSummary, SliceProgressionOutcome},
 };
+use run_mode::{RewardOffer, RunState};
 
 const BOARD_JSON: &str = include_str!("../assets/content/boards/feel_fan_01.json");
 const BOARD_SCALE: f32 = 22.0;
@@ -56,10 +63,18 @@ struct FeelTestState {
     trajectory_points: Vec<content_schema::Vec2>,
     shot_ball_position: Option<content_schema::Vec2>,
     playback: Option<TrajectoryPlaybackCursor>,
+    run_state: RunState,
+    reward_offer: RewardOffer,
+    reward_controller: RewardChoiceController,
+    reward_screen: Option<RewardChoiceScreen>,
+    reward_confirmation: Option<FeedbackEvent>,
+    reward_flash_ticks: u32,
 }
 
 impl FeelTestState {
     fn new(board: BoardDefinition) -> Self {
+        let reward_offer = act1_feel_test_relic_offer();
+
         Self {
             board,
             aim_angle_radians: PI / 2.0,
@@ -73,6 +88,12 @@ impl FeelTestState {
             trajectory_points: Vec::new(),
             shot_ball_position: None,
             playback: None,
+            run_state: RunState::act1_slice(SHOT_SEED),
+            reward_offer,
+            reward_controller: RewardChoiceController::new(false),
+            reward_screen: None,
+            reward_confirmation: None,
+            reward_flash_ticks: 0,
         }
     }
 
@@ -99,6 +120,32 @@ fn handle_input(
     time: Res<Time>,
     mut state: ResMut<FeelTestState>,
 ) {
+    if state.reward_screen.is_some() {
+        let key = if keys.just_pressed(KeyCode::Digit1) {
+            Some('1')
+        } else if keys.just_pressed(KeyCode::Digit2) {
+            Some('2')
+        } else if keys.just_pressed(KeyCode::Digit3) {
+            Some('3')
+        } else {
+            None
+        };
+
+        if let Some(key) = key {
+            let offer = state.reward_offer.clone();
+            let mut controller = state.reward_controller.clone();
+            let transition = controller.handle_key(key, &mut state.run_state, &offer);
+            state.reward_controller = controller;
+            if let RewardChoiceTransition::Selected { feedback, .. } = transition {
+                state.reward_confirmation = Some(feedback);
+                state.reward_flash_ticks = 18;
+                state.reward_screen = None;
+                state.revision += 1;
+            }
+        }
+        return;
+    }
+
     if state.playback.is_some() {
         return;
     }
@@ -127,16 +174,16 @@ fn handle_input(
         }
         let feedback =
             play_shot_feedback(&state.board, &result, AccessibilityFeedbackFlags::DEFAULT);
-        state.last_completion = Some(
-            SliceCompletionSummary::from_shot_summary(
-                &state.board,
-                &result.summary,
-                state.mock_score,
-                1,
-                feedback.summaries.len(),
-            )
-            .with_feedback_events(feedback.events.len()),
-        );
+        let completion = SliceCompletionSummary::from_shot_summary(
+            &state.board,
+            &result.summary,
+            state.mock_score,
+            1,
+            feedback.summaries.len(),
+        )
+        .with_feedback_events(feedback.events.len());
+        let board_won = completion.progression_outcome == SliceProgressionOutcome::BoardWon;
+        state.last_completion = Some(completion);
         state.first_bounce = predict_first_bounce(&state.board, &input);
         let samples = sample_shot_trajectory(&state.board, &input, TRAJECTORY_SAMPLE_EVERY_TICKS);
         let playback = TrajectoryPlaybackCursor::new(samples, PLAYBACK_TICKS_PER_SECOND);
@@ -149,6 +196,9 @@ fn handle_input(
             .map(|peg| peg.as_str().to_owned())
             .collect();
         state.last_summary = Some(result.summary);
+        if board_won {
+            state.reward_screen = Some(RewardChoiceScreen::from_offer(&state.reward_offer));
+        }
         if playback.is_complete() {
             state.trajectory_points = playback.trail_points();
             state.shot_ball_position = playback.current_position();
@@ -161,6 +211,11 @@ fn handle_input(
 }
 
 fn advance_shot_playback(time: Res<Time>, mut state: ResMut<FeelTestState>) {
+    if state.reward_flash_ticks > 0 {
+        state.reward_flash_ticks -= 1;
+        state.revision += 1;
+    }
+
     let Some(mut playback) = state.playback.take() else {
         return;
     };
@@ -205,7 +260,188 @@ fn refresh_dynamic_overlay(
         spawn_hit_markers(&mut commands, &state, &mut meshes, &mut materials);
         spawn_result_panel(&mut commands, &state, &mut meshes, &mut materials);
     }
+    if let Some(screen) = &state.reward_screen {
+        spawn_reward_screen(&mut commands, screen, &mut meshes, &mut materials);
+    }
+    if state.reward_flash_ticks > 0 {
+        spawn_reward_confirmation(&mut commands, &state, &mut meshes, &mut materials);
+    }
     state.drawn_revision = state.revision;
+}
+
+fn spawn_reward_screen(
+    commands: &mut Commands,
+    screen: &RewardChoiceScreen,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<ColorMaterial>,
+) {
+    let backdrop = spawn_rect(
+        commands,
+        meshes,
+        materials,
+        RectSpec::new(
+            Vec2::new(0.0, 20.0),
+            Vec2::new(790.0, 360.0),
+            Color::srgba(0.025, 0.03, 0.045, 0.92),
+            20.0,
+            0.0,
+        ),
+    );
+    commands.entity(backdrop).insert(DynamicOverlay);
+    spawn_overlay_text(
+        commands,
+        &screen.title,
+        Vec2::new(0.0, 170.0),
+        34.0,
+        Color::srgb(1.0, 0.92, 0.58),
+        21.0,
+    );
+    spawn_overlay_text(
+        commands,
+        &screen.subtitle,
+        Vec2::new(0.0, 132.0),
+        18.0,
+        Color::srgb(0.82, 0.88, 1.0),
+        21.0,
+    );
+
+    for (slot, card) in screen.cards.iter().enumerate() {
+        spawn_reward_card(commands, card, slot, meshes, materials);
+    }
+}
+
+fn spawn_reward_card(
+    commands: &mut Commands,
+    card: &RewardCardModel,
+    slot: usize,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<ColorMaterial>,
+) {
+    let x = -250.0 + slot as f32 * 250.0;
+    let rarity_color = reward_rarity_color(card.rarity);
+    let card_rect = spawn_rect(
+        commands,
+        meshes,
+        materials,
+        RectSpec::new(
+            Vec2::new(x, 0.0),
+            Vec2::new(210.0, 230.0),
+            Color::srgb(0.10, 0.12, 0.18),
+            21.0,
+            0.0,
+        ),
+    );
+    commands.entity(card_rect).insert(DynamicOverlay);
+    let rarity_bar = spawn_rect(
+        commands,
+        meshes,
+        materials,
+        RectSpec::new(
+            Vec2::new(x, 104.0),
+            Vec2::new(210.0, 10.0),
+            rarity_color,
+            22.0,
+            0.0,
+        ),
+    );
+    commands.entity(rarity_bar).insert(DynamicOverlay);
+
+    spawn_overlay_text(
+        commands,
+        &format!("{}", card.hotkey),
+        Vec2::new(x - 86.0, 76.0),
+        28.0,
+        Color::WHITE,
+        23.0,
+    );
+    spawn_overlay_text(
+        commands,
+        &card.title,
+        Vec2::new(x, 48.0),
+        21.0,
+        Color::srgb(0.96, 0.96, 0.9),
+        23.0,
+    );
+    spawn_overlay_text(
+        commands,
+        &format!("{:?}", card.rarity),
+        Vec2::new(x, 18.0),
+        15.0,
+        rarity_color,
+        23.0,
+    );
+    spawn_overlay_text(
+        commands,
+        &card.description,
+        Vec2::new(x, -46.0),
+        14.0,
+        Color::srgb(0.72, 0.78, 0.9),
+        23.0,
+    );
+}
+
+fn spawn_reward_confirmation(
+    commands: &mut Commands,
+    state: &FeelTestState,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<ColorMaterial>,
+) {
+    let alpha = (state.reward_flash_ticks as f32 / 18.0).clamp(0.0, 1.0);
+    let flash = spawn_rect(
+        commands,
+        meshes,
+        materials,
+        RectSpec::new(
+            Vec2::ZERO,
+            Vec2::new(840.0, 760.0),
+            Color::srgba(1.0, 0.9, 0.35, 0.18 * alpha),
+            30.0,
+            0.0,
+        ),
+    );
+    commands.entity(flash).insert(DynamicOverlay);
+    let label = state
+        .reward_confirmation
+        .as_ref()
+        .map(|event| format!("Reward chosen ({:?})", event.kind))
+        .unwrap_or_else(|| "Reward chosen".to_owned());
+    spawn_overlay_text(
+        commands,
+        &label,
+        Vec2::new(0.0, 245.0),
+        24.0,
+        Color::srgb(1.0, 0.95, 0.55),
+        31.0,
+    );
+}
+
+fn spawn_overlay_text(
+    commands: &mut Commands,
+    text: &str,
+    position: Vec2,
+    font_size: f32,
+    color: Color,
+    z: f32,
+) {
+    commands.spawn((
+        Text2d::new(text.to_owned()),
+        TextFont {
+            font_size: FontSize::Px(font_size),
+            ..default()
+        },
+        TextColor(color),
+        Transform::from_translation(position.extend(z)),
+        DynamicOverlay,
+    ));
+}
+
+fn reward_rarity_color(rarity: run_mode::RewardRarity) -> Color {
+    match rarity {
+        run_mode::RewardRarity::Common => Color::srgb(0.68, 0.76, 0.86),
+        run_mode::RewardRarity::Uncommon => Color::srgb(0.24, 0.95, 0.48),
+        run_mode::RewardRarity::Rare => Color::srgb(0.68, 0.42, 1.0),
+        run_mode::RewardRarity::Boss => Color::srgb(1.0, 0.62, 0.16),
+    }
 }
 
 fn spawn_board(

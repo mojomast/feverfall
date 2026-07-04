@@ -1,0 +1,7 @@
+id = "relics/act1/stone_chisel"
+name = "Stone Chisel"
+category = "Board"
+rarity = "Common"
+act = 1
+description = "At board start, one small stone obstacle is marked brittle for the first hit."
+effects = ["effects/board/brittle_stone_mark"]

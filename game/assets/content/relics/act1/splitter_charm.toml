@@ -1,0 +1,7 @@
+id = "relics/act1/splitter_charm"
+name = "Splitter Charm"
+category = "Ball"
+rarity = "Common"
+act = 1
+description = "First orange hit each board queues a small splitter echo on the next shot."
+effects = ["effects/ball/splitter_echo"]

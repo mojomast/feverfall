@@ -1,0 +1,7 @@
+id = "relics/act1/rim_ricochet"
+name = "Rim Ricochet"
+category = "Basket"
+rarity = "Rare"
+act = 1
+description = "First bucket rim hit each board scores as a style bonus if the ball is later caught."
+effects = ["effects/basket/rim_style_bonus"]

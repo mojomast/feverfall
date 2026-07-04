@@ -1,0 +1,12 @@
+id = "balls/act1/frost_orb"
+name = "Frost Orb"
+family = "ball_families/frost"
+rarity = "Rare"
+description = "First stone hit each board briefly slows moving basket timing."
+effects = ["effects/ball/stone_frost_slow"]
+
+[stats]
+radius = 0.23
+mass = 1.05
+launch_speed_multiplier = 0.97
+restitution_multiplier = 0.97

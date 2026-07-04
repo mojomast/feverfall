@@ -1,0 +1,7 @@
+id = "relics/act1/catch_streak_sash"
+name = "Catch Streak Sash"
+category = "Basket"
+rarity = "Uncommon"
+act = 1
+description = "Consecutive basket catches grant escalating score bonuses until a miss."
+effects = ["effects/basket/catch_streak_score"]

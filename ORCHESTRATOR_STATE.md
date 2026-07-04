@@ -35,14 +35,23 @@ Checkpoint 2: Vertical Slice Alpha.
 - [C2-FE] Runtime UI/feedback added slice completion summaries, replay/score/progression feedback fields, and small Bevy completion markers while preserving aim/fire animation.
 - [C2-G] Tooling added a vertical-slice replay fixture using authored board data and CI/local validation coverage.
 - [C2-I] QA/Telemetry added vertical-slice shot/score/progression telemetry events, replay labels, and playtest/determinism doc updates.
+- [C2-G2] Tooling upgraded the project toolchain to Rust 1.95.0, moved the optional Bevy feel-test dependency to Bevy 0.19, added a two-board Act 1 replay fixture, and wired CI/local validation to verify its hash.
+- [C2-LOOP] Integrated the short Act 1 run loop across node progression, board resolution, reward application, run summary, and deterministic smoke output.
+- [C2-REWARD] Added reward-choice modeling/UI summaries and deterministic reward application for the C2 run path.
+- [C2-NODEMAP] Added node-map UI summaries for the Act 1 slice path.
+- [C2-RUNSUMMARY] Added end-of-run summary UI data and telemetry coverage.
+- [C2-CONTENT] Added C2 content schema/data for relics, balls, shops, and Act 1 boss board content.
+- [C2-SMOKE-FIX] Updated smoke coverage to include the integrated run summary hash and full C2 automated gates.
+- [C2-REWARD-CLIPPY-FIX] Fixed reward/UI strict-clippy issues while preserving deterministic smoke behavior.
 
 ## Active Workstreams
 
 - Physics Core & Feel: Checkpoint 1 feel approved; simulator, first-bounce, no-tunneling, wall bounds, and bucket diagnostics passing.
-- Checkpoint 2 Core Loop: deterministic vertical-slice smoke session passing through physics, game rules, run state, RPG state, HUD, feedback, and replay hash.
-- Content / Progression: Act 1 slice defaults and short run path available in shared run/RPG contracts.
-- UI / Feedback / Telemetry: slice summaries and telemetry mappings passing; fuller playable run UI remains future work.
-- Checkpoint gate: Checkpoint 2 automated vertical-slice smoke is passing; next human gate is playable vertical-slice feel/scope after native build wiring if desired.
+- Checkpoint 2 Core Loop: deterministic vertical-slice smoke session passing through physics, game rules, node progression, reward selection, run state, RPG state, HUD, feedback, telemetry, run summary, and replay/run-summary hashes.
+- Content / Progression: Act 1 slice defaults, node path, reward offers, relic/ball/shop content, and boss board validation are available in shared contracts and content data.
+- UI / Feedback / Telemetry: node-map, reward, run-summary, slice summaries, and telemetry mappings pass automated validation; human interactive-flow confirmation remains the Checkpoint 2 exit gate.
+- Checkpoint gate: Checkpoint 2 automated gates are passing; do not mark C2 fully complete until human interactive-flow approval is recorded.
+- Tooling gate: CI/local validation includes default, vertical-slice, Act 1 two-board replay hash gates, content lint, board validation, default smoke, and Bevy feel-test smoke/clippy gates.
 
 ## Subagents Dispatched
 
@@ -67,10 +76,19 @@ Checkpoint 2: Vertical Slice Alpha.
 - [C2-FE] Runtime UI Feedback Agent: slice completion HUD/feedback and Bevy markers.
 - [C2-G] Tooling Validation Agent: vertical-slice replay fixture and CI/local docs.
 - [C2-I] QA Telemetry Agent: vertical-slice telemetry events and QA docs.
+- [C2-G2] Tooling & CI Update Agent: Rust 1.95.0 / Bevy 0.19 update and two-board replay CI coverage.
+- [C2-LOOP] Core Loop Agent: integrated short Act 1 run flow.
+- [C2-REWARD] Reward Agent: reward-choice flow and application.
+- [C2-NODEMAP] Node Map Agent: node-map UI summary.
+- [C2-RUNSUMMARY] Run Summary Agent: end-of-run summary and telemetry shape.
+- [C2-CONTENT] Content Agent: relic, ball, shop, and boss-board content schemas/data.
+- [C2-SMOKE-FIX] Smoke Fix Agent: integrated smoke validation/hash stabilization.
+- [C2-REWARD-CLIPPY-FIX] Reward Clippy Fix Agent: strict-clippy cleanup.
 
 ## Files Changed
 
 - `Cargo.toml`
+- `rust-toolchain.toml`
 - `.gitignore`
 - `.github/workflows/ci.yml`
 - `.github/workflows/windows-feel-test.yml`
@@ -97,6 +115,14 @@ Checkpoint 2: Vertical Slice Alpha.
 - `game/src/vertical_slice.rs`
 - `tests/golden_replays/minimal_test.replay.json`
 - `tests/golden_replays/vertical_slice_feel_fan.replay.json`
+- `tests/golden_replays/act1_twobboard_run.replay.json`
+- `game/assets/content/balls/*`
+- `game/assets/content/relics/*`
+- `game/assets/content/shops/*`
+- `game/assets/content/boards/act1_boss_01/*`
+- `game/src/plugins/node_map_ui.rs`
+- `game/src/plugins/reward_ui.rs`
+- `game/src/plugins/run_summary_ui.rs`
 - `crates/telemetry/*`
 - `docs/playtesting/feel_survey.md`
 - `docs/qa/bug_triage_template.md`
@@ -110,25 +136,27 @@ Checkpoint 2: Vertical Slice Alpha.
 - `cargo test --workspace`
 - `cargo run -p replay_runner`
 - `cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json`
+- `cargo run -p replay_runner -- --replay tests/golden_replays/act1_twobboard_run.replay.json`
 - `cargo run -p board_validator`
 - `cargo run -p content_linter`
-- `cargo run -p seed_browser`
-- `cargo run -p seed_browser -- --act 1 --archetype fan --count 3`
 - `cargo run -p feverfall_game -- --smoke`
 - `cargo check -p feverfall_game --features bevy_feel_test`
 - `cargo clippy -p feverfall_game --features bevy_feel_test --all-targets -- -D warnings`
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke`
 - Docker Windows cross-build: `cargo build -p feverfall_game --features bevy_feel_test --release --target x86_64-pc-windows-gnu`
 - Native Windows feel-test workflow added but not run locally: `Windows Feel-Test Build`.
 
 ## Passing Validation
 
-- Formatting, strict clippy, workspace tests, replay runner, vertical-slice replay runner, board validator, content linter, seed browser smoke, and game smoke all pass after Checkpoint 2 integration.
+- Formatting, strict clippy, workspace tests, replay runner, vertical-slice replay runner, Act 1 two-board replay runner, board validator, content linter, default game smoke, Bevy feel-test check/clippy, and Bevy feel-test smoke all pass after Checkpoint 2 integration.
 - `cargo test --workspace` includes 16 `physics_core` tests, including first-bounce prediction matching simulation, no tunneling, no NaN, bucket catch, peg clear timing, left/right board wall confinement, damped wall rebound, trajectory sampling determinism, and 10,000 random-ish stress shots.
-- `cargo run -p board_validator` passes all 10 authored boards.
+- `cargo run -p board_validator` passes authored boards, including `PASS boards/act1_boss_01`.
 - `cargo run -p replay_runner` matches the golden replay hash.
 - `cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json` matches vertical-slice hash `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`.
-- `cargo run -p feverfall_game -- --smoke` prints plugin registration, Checkpoint 2 vertical-slice summary, and deterministic feel-test smoke summary.
-- Checkpoint 2 smoke summary includes board `boards/feel_fan_01`, score, balls, sparks, XP, replay hash `a8112f9a7503ebb21431369ae0f354e7cf0687ba2b5576da3b7d43fa4b411a8a`, progression, and feedback cue counts.
+- `cargo run -p replay_runner -- --replay tests/golden_replays/act1_twobboard_run.replay.json` matches Act 1 two-board hash `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`.
+- `cargo run -p content_linter` passes with 44 unique IDs.
+- `cargo run -p feverfall_game -- --smoke` prints plugin registration, Checkpoint 2 vertical-slice summary, deterministic feel-test smoke summary, node/reward/run-summary output, and smoke run summary hash `0b36add9e9b3283c`.
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` passes with feel-test smoke hash `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
 - Automated bucket diagnostics after tuning iteration 1: all 10 authored boards meet the 2+ catchable trajectory threshold.
 - Default game smoke prints a deterministic feel-test summary and exits.
 - Feature-gated playable Bevy feel-test compiles and passes clippy with `bevy_feel_test` enabled.
@@ -144,17 +172,16 @@ Checkpoint 2: Vertical Slice Alpha.
 
 ## Environment Notes
 
-- Bevy 0.19 is blocked in the current validation environment because it requires `rustc 1.95.0`; the environment has `rustc 1.94.0`.
-- The feature-gated playable scene uses Bevy 0.18 until the toolchain can be raised.
+- The workspace now pins Rust 1.95.0 via `rust-toolchain.toml`; this unblocks Bevy 0.19 for the feature-gated playable scene.
 - Playable feel-test command: `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`, or no args for feature-built binaries such as the Windows artifact. Use `--smoke` to force the non-interactive smoke path. Pressing Space draws a cyan shot trail and yellow final ball marker.
 
 ## Blockers
 
-- None.
+- Human interactive-flow confirmation remains the Checkpoint 2 exit blocker/decision. Automated C2 gates are passing.
 
 ## Decisions Needed From Human
 
-- Decide whether to request a native Windows build/release for the Checkpoint 2 vertical-slice smoke/playable feedback, or continue with the next subagent batch for fuller playable run UI.
+- Confirm the integrated Checkpoint 2 interactive flow as acceptable before marking Checkpoint 2 complete.
 
 ## Last Replay Hash
 
@@ -164,10 +191,22 @@ Checkpoint 2: Vertical Slice Alpha.
 
 - `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`
 
+## Last Act 1 Two-Board Replay Hash
+
+- `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`
+
+## Last Smoke Run Summary Hash
+
+- `0b36add9e9b3283c`
+
+## Last Feel-Test Smoke Hash
+
+- `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`
+
 ## Next Integration Target
 
-- Checkpoint 2 playable vertical-slice runtime: move beyond smoke into a short interactive run path with board/node progression and reward choice presentation.
+- Checkpoint 2 human gate: confirm the integrated interactive-flow feel/scope, then mark Checkpoint 2 complete if approved.
 
 ## Next Parallel Dispatch
 
-- Candidate C2 batch: game-loop progression UI, reward-choice model/UI, telemetry JSONL export from smoke/playtest sessions, and native Windows vertical-slice build workflow/release.
+- After human C2 approval: start Checkpoint 3 planning, or request polish fixes if interactive-flow confirmation finds issues.

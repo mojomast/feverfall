@@ -97,7 +97,7 @@ Last replay hash:
 
 Remaining before Checkpoint 1 exit:
 - None. Physics Feel Alpha is approved.
-- Bevy 0.19 remains blocked in this environment because it requires `rustc 1.95.0`; current validation uses Bevy 0.18 with `rustc 1.94.0`.
+- Bevy 0.19 is unblocked after pinning Rust 1.95.0 in `rust-toolchain.toml`.
 
 Playable feel-test command:
 - `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`
@@ -108,7 +108,7 @@ Decision from human:
 
 ## Checkpoint 2: Vertical Slice Alpha
 
-Status: automated smoke slice implemented; playable run UI/reward flow remains next work.
+Status: automated C2 gates passing; human interactive-flow confirmation remains the exit blocker/decision. Do not mark Checkpoint 2 complete until that approval is recorded.
 
 Completed:
 - [C2-A] Core vertical-slice gameplay loop added `game/src/vertical_slice.rs`.
@@ -117,6 +117,16 @@ Completed:
 - [C2-FE] Runtime UI/feedback added `SliceCompletionSummary`, score/orange/catch/replay/progression/feedback fields, feel-test smoke outcome details, and small Bevy completion markers while preserving animated shot playback.
 - [C2-G] Tooling added `tests/golden_replays/vertical_slice_feel_fan.replay.json`, `board_path` fixture support in `replay_runner`, CI replay coverage, and local validation docs.
 - [C2-I] QA/telemetry added vertical-slice shot result and score/progression telemetry mappings, replay labels, and QA/playtest doc updates.
+- [C2-G2] Tooling pinned Rust 1.95.0, upgraded the optional Bevy feel-test dependency to 0.19, added ordered multi-board replay fixture support, and added `tests/golden_replays/act1_twobboard_run.replay.json` for a two-board Act 1 smoke gate.
+- [C2-LOOP] Integrated the short Act 1 loop across node progression, board resolution, reward application, run state, RPG state, and deterministic smoke summary output.
+- [C2-REWARD] Added reward-choice model/UI summaries and deterministic reward application to the C2 flow.
+- [C2-NODEMAP] Added node-map UI summaries for the Act 1 slice path.
+- [C2-RUNSUMMARY] Added end-of-run summary UI data and `telemetry::TelemetryEvent::RunEnded` coverage.
+- [C2-CONTENT] Added schema/data coverage for Act 1 relics, ball variants, shop items, and the `boards/act1_boss_01` boss board.
+- Automated validation now runs on Rust 1.95.0 with optional Bevy 0.19 checks.
+- [C2-I2] Updated QA/playtest/replay docs for integrated C2 smoke and run-summary telemetry.
+- [C2-SMOKE-FIX] Stabilized integrated smoke output and the smoke run summary hash.
+- [C2-REWARD-CLIPPY-FIX] Fixed strict-clippy issues in reward/UI integration.
 
 Validation completed:
 - `cargo fmt --all -- --check`
@@ -124,18 +134,29 @@ Validation completed:
 - `cargo test --workspace`
 - `cargo run -p replay_runner`
 - `cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json`
+- `cargo run -p replay_runner -- --replay tests/golden_replays/act1_twobboard_run.replay.json`
 - `cargo run -p board_validator`
 - `cargo run -p content_linter`
-- `cargo run -p seed_browser -- --act 1 --archetype fan --count 3`
 - `cargo run -p feverfall_game -- --smoke`
 - `cargo check -p feverfall_game --features bevy_feel_test`
 - `cargo clippy -p feverfall_game --features bevy_feel_test --all-targets -- -D warnings`
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke`
 
 Checkpoint 2 hashes:
 - Default minimal replay hash: `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`
 - Vertical-slice replay fixture hash: `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`
-- Current smoke-session vertical-slice replay hash: `a8112f9a7503ebb21431369ae0f354e7cf0687ba2b5576da3b7d43fa4b411a8a`
+- Act 1 two-board replay fixture hash: `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`
+- Smoke run summary hash: `0b36add9e9b3283c`
+- Bevy feel-test smoke hash: `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`
+
+Checkpoint 2 automated gate notes:
+- Toolchain: Rust 1.95.0 via `rust-toolchain.toml`.
+- Optional playable/smoke feature dependency: Bevy 0.19.
+- `cargo run -p content_linter` passes with 44 unique IDs across board, relic, ball, and shop content.
+- `cargo run -p board_validator` includes `PASS boards/act1_boss_01`.
+- `cargo run -p feverfall_game -- --smoke` emits the integrated node/reward/run-summary smoke with hash `0b36add9e9b3283c`.
+- `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` emits feel-test smoke hash `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
 
 Next before Checkpoint 2 exit:
-- Build a fuller interactive vertical slice around board/node progression and reward choice presentation.
-- Optionally publish a native Windows build after the next playable vertical-slice increment.
+- Human must confirm the integrated interactive flow/feel/scope.
+- If approved, mark Checkpoint 2 complete. If not approved, dispatch targeted fixes from human feedback.

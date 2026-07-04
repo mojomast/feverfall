@@ -1,0 +1,12 @@
+id = "balls/act1/anchor_orb"
+name = "Anchor Orb"
+family = "ball_families/anchor"
+rarity = "Uncommon"
+description = "Large, low-bounce ball built for controlled first collisions."
+effects = ["effects/ball/controlled_first_collision"]
+
+[stats]
+radius = 0.27
+mass = 1.5
+launch_speed_multiplier = 0.9
+restitution_multiplier = 0.9

@@ -1,0 +1,12 @@
+id = "balls/act1/heavy_orb"
+name = "Heavy Orb"
+family = "ball_families/heavy"
+rarity = "Common"
+description = "Slower launch but keeps momentum through clustered pegs."
+effects = ["effects/ball/heavy_momentum"]
+
+[stats]
+radius = 0.24
+mass = 1.35
+launch_speed_multiplier = 0.94
+restitution_multiplier = 0.98

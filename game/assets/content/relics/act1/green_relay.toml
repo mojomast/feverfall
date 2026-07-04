@@ -1,0 +1,7 @@
+id = "relics/act1/green_relay"
+name = "Green Relay"
+category = "Peg"
+rarity = "Uncommon"
+act = 1
+description = "Green pegs charge twice if hit after at least three other pegs."
+effects = ["effects/peg/green_combo_recharge"]

@@ -1,0 +1,7 @@
+id = "relics/act1/rubber_glaze"
+name = "Rubber Glaze"
+category = "Ball"
+rarity = "Uncommon"
+act = 1
+description = "After a basket catch, the next ball gains extra bounce from pegs."
+effects = ["effects/ball/catch_rubber_charge"]

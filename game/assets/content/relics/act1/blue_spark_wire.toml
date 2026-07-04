@@ -1,0 +1,7 @@
+id = "relics/act1/blue_spark_wire"
+name = "Blue Spark Wire"
+category = "Peg"
+rarity = "Common"
+act = 1
+description = "Every sixth blue peg hit adds one spark for combo relics."
+effects = ["effects/peg/blue_spark_counter"]

@@ -1,0 +1,8 @@
+id = "shops/act1/basket_tune_service"
+name = "Basket Tune-Up"
+act = 1
+item_type = "Service"
+price_coins = 30
+stock_weight = 45
+description = "Temporarily improves basket handling for the next board."
+grants = "effects/shop/basket_tune_next_board"

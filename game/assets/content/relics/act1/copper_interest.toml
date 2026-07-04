@@ -1,0 +1,7 @@
+id = "relics/act1/copper_interest"
+name = "Copper Interest"
+category = "EconomyCombo"
+rarity = "Common"
+act = 1
+description = "After each board, gain one coin per ten coins held, capped for Act 1."
+effects = ["effects/economy/capped_interest"]

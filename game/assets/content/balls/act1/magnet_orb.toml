@@ -1,0 +1,12 @@
+id = "balls/act1/magnet_orb"
+name = "Magnet Orb"
+family = "ball_families/magnet"
+rarity = "Uncommon"
+description = "Slightly biases late flight toward the basket after five peg hits."
+effects = ["effects/ball/late_basket_bias"]
+
+[stats]
+radius = 0.22
+mass = 1.0
+launch_speed_multiplier = 0.98
+restitution_multiplier = 1.0

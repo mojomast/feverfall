@@ -1,0 +1,7 @@
+id = "relics/act1/orange_lacquer"
+name = "Orange Lacquer"
+category = "Peg"
+rarity = "Common"
+act = 1
+description = "The first orange peg cleared each shot awards a small coin kicker."
+effects = ["effects/peg/first_orange_coin"]

@@ -89,14 +89,26 @@ pub fn load_board_from_path(path: impl AsRef<Path>) -> Result<BoardDefinition, B
 }
 
 pub fn load_authored_boards(dir: impl AsRef<Path>) -> Result<Vec<BoardDefinition>, BoardLoadError> {
-    let mut paths = fs::read_dir(dir.as_ref())
-        .map_err(BoardLoadError::Io)?
-        .map(|entry| entry.map(|entry| entry.path()).map_err(BoardLoadError::Io))
-        .collect::<Result<Vec<_>, _>>()?;
-    paths.retain(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"));
+    let mut paths = Vec::new();
+    collect_board_paths(dir.as_ref(), &mut paths)?;
     paths.sort();
 
     paths.into_iter().map(load_board_from_path).collect()
+}
+
+fn collect_board_paths(
+    dir: &Path,
+    paths: &mut Vec<std::path::PathBuf>,
+) -> Result<(), BoardLoadError> {
+    for entry in fs::read_dir(dir).map_err(BoardLoadError::Io)? {
+        let path = entry.map_err(BoardLoadError::Io)?.path();
+        if path.is_dir() {
+            collect_board_paths(&path, paths)?;
+        } else if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+            paths.push(path);
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug)]
@@ -201,11 +213,13 @@ pub fn validate_board(board: &BoardDefinition) -> BoardValidationReport {
         issues.push(BoardValidationIssue::MissingOrangePegs);
     }
     let smoke_test_board = board.tags.iter().any(|tag| tag.as_str() == "test");
-    if !smoke_test_board && !(MIN_ORANGE_PEGS..=MAX_ORANGE_PEGS).contains(&orange_count) {
+    let boss_board = board.tags.iter().any(|tag| tag.as_str() == "boss");
+    let max_orange_pegs = if boss_board { 28 } else { MAX_ORANGE_PEGS };
+    if !smoke_test_board && !(MIN_ORANGE_PEGS..=max_orange_pegs).contains(&orange_count) {
         issues.push(BoardValidationIssue::OrangeCountOutOfRange {
             count: orange_count,
             min: MIN_ORANGE_PEGS,
-            max: MAX_ORANGE_PEGS,
+            max: max_orange_pegs,
         });
     }
 

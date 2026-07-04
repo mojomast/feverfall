@@ -1,0 +1,12 @@
+id = "balls/act1/basic_orb"
+name = "Basic Orb"
+family = "ball_families/basic"
+rarity = "Common"
+description = "Reliable starter ball with baseline radius, mass, speed, and bounce."
+effects = ["effects/ball/baseline"]
+
+[stats]
+radius = 0.22
+mass = 1.0
+launch_speed_multiplier = 1.0
+restitution_multiplier = 1.0

@@ -1,0 +1,7 @@
+id = "relics/act1/bumper_seed"
+name = "Bumper Seed"
+category = "Board"
+rarity = "Uncommon"
+act = 1
+description = "Adds a small rubber side bumper on boards with no hazards."
+effects = ["effects/board/spawn_side_bumper"]

@@ -1,0 +1,12 @@
+id = "balls/act1/glass_orb"
+name = "Glass Orb"
+family = "ball_families/glass"
+rarity = "Rare"
+description = "Fast and precise; rewards early orange hits but loses value after misses."
+effects = ["effects/ball/early_orange_precision"]
+
+[stats]
+radius = 0.19
+mass = 0.75
+launch_speed_multiplier = 1.08
+restitution_multiplier = 1.03

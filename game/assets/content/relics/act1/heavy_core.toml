@@ -1,0 +1,7 @@
+id = "relics/act1/heavy_core"
+name = "Heavy Core"
+category = "Ball"
+rarity = "Common"
+act = 1
+description = "Shots lose less speed after the first peg collision but launch slightly slower."
+effects = ["effects/ball/heavy_first_bounce"]

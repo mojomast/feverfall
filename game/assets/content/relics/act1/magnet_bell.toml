@@ -1,0 +1,7 @@
+id = "relics/act1/magnet_bell"
+name = "Magnet Bell"
+category = "Basket"
+rarity = "Uncommon"
+act = 1
+description = "Near catches add a small horizontal pull toward the bucket center."
+effects = ["effects/basket/near_catch_pull"]

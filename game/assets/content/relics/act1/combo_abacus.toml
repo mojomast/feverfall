@@ -1,0 +1,7 @@
+id = "relics/act1/combo_abacus"
+name = "Combo Abacus"
+category = "EconomyCombo"
+rarity = "Common"
+act = 1
+description = "Combo thresholds require one fewer peg after a basket catch."
+effects = ["effects/combo/catch_threshold_discount"]
