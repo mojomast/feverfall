@@ -44,6 +44,7 @@ Completed:
 - [G] Option C build path added feature-gated Bevy feel-test command while preserving non-interactive CI smoke.
 - [F] Option C feel-test scene model added aim adjustment, deterministic shot simulation, first-bounce data, replay hash, HUD/debug summaries, and smoke tests.
 - [E] Option C feedback wiring maps feel-test shot results to existing `FeedbackEvent` cue summaries with accessibility reductions.
+- [F] Visible shot fix added deterministic trajectory sampling to render a cyan trail and yellow final ball marker when Space fires.
 
 Authored board IDs:
 - `boards/feel_fan_01`
@@ -96,7 +97,7 @@ Remaining before Checkpoint 1 exit:
 
 Playable feel-test command:
 - `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`
-- Controls: Left/Right or A/D adjusts aim; Space fires a deterministic shot.
+- Controls: Left/Right or A/D adjusts aim; Space fires a deterministic shot and draws a cyan shot trail plus yellow final ball marker.
 
 Decision needed from human:
 - Run the playable feel-test scene and approve Physics Feel Alpha for Checkpoint 2, or request tuning iteration 2 with a specific target: too floaty, too chaotic, catch too forgiving, catch too strict, or first bounce unreadable.

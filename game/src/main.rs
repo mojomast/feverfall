@@ -4,19 +4,32 @@ mod plugins;
 mod feel_test;
 
 fn main() {
-    if std::env::args().any(|arg| arg == "--feel-test") {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+
+    if should_run_feel_test(&args) {
         run_feel_test_or_explain();
         return;
     }
 
     let summary = plugins::register_placeholders();
-    println!("Feverfall app skeleton ready. Use --features bevy_feel_test -- --feel-test for the playable Bevy feel-test scene.");
+    println!("Feverfall app skeleton ready. Enable --features bevy_feel_test for the playable Bevy feel-test scene, or pass --smoke to force this smoke path.");
     println!("{summary}");
 
     match plugins::feel_test::run_smoke_scene() {
         Ok(scene) => println!("{}", scene.outcome_line()),
         Err(error) => eprintln!("feel-test scene unavailable: {error}"),
     }
+}
+
+#[cfg(feature = "bevy_feel_test")]
+fn should_run_feel_test(args: &[String]) -> bool {
+    !args.iter().any(|arg| arg == "--smoke")
+        && (args.is_empty() || args.iter().any(|arg| arg == "--feel-test"))
+}
+
+#[cfg(not(feature = "bevy_feel_test"))]
+fn should_run_feel_test(args: &[String]) -> bool {
+    args.iter().any(|arg| arg == "--feel-test")
 }
 
 #[cfg(feature = "bevy_feel_test")]

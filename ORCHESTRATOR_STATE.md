@@ -25,6 +25,8 @@ Checkpoint 1: Physics Feel Alpha.
 - [E] Option C wired feel-test shot results to existing feedback VFX/audio cue summaries with accessibility reductions.
 - Built Windows x86_64 feel-test binary for human testing from the current Checkpoint 1 source.
 - [G] Added a manually runnable native Windows GitHub Actions feel-test build workflow that uploads the `.exe` and SHA-256 checksum artifacts. Not yet run by this agent.
+- [G] Updated feature-built feel-test launch behavior so the native Windows artifact opens the playable scene on double-click/no args, with `--smoke` retained for non-interactive smoke mode.
+- [F] Fixed Bevy feel-test shot visibility: Space now renders a cyan deterministic trajectory trail and yellow final ball indicator instead of only instant hit markers.
 
 ## Active Workstreams
 
@@ -49,6 +51,7 @@ Checkpoint 1: Physics Feel Alpha.
 - [G] Build / Tooling / CI Agent: Option C Bevy feel-test build path.
 - [F] UI / HUD Agent: Option C feel-test scene shell and HUD/debug models.
 - [E] Feedback / VFX / Audio Agent: Option C shot feedback wiring.
+- [F] UI / HUD Agent: visible ball/trajectory fix for playable feel-test scene.
 
 ## Files Changed
 
@@ -109,6 +112,7 @@ Checkpoint 1: Physics Feel Alpha.
 - Automated bucket diagnostics after tuning iteration 1: all 10 authored boards meet the 2+ catchable trajectory threshold.
 - Default game smoke prints a deterministic feel-test summary and exits.
 - Feature-gated playable Bevy feel-test compiles and passes clippy with `bevy_feel_test` enabled.
+- Bevy feel-test shot visibility now includes a trajectory trail and final ball marker driven by deterministic physics trajectory sampling.
 - Windows binary built successfully at `target/x86_64-pc-windows-gnu/release/feverfall_game.exe`.
 - Windows binary SHA-256: `dac381bb4cbd8c764a779cf9a9bac80cb2f26f505ac4f26e8428701f1ef5b652`.
 - Native GitHub Actions Windows artifact workflow is available but has not been run by this agent.
@@ -121,7 +125,7 @@ Checkpoint 1: Physics Feel Alpha.
 
 - Bevy 0.19 is blocked in the current validation environment because it requires `rustc 1.95.0`; the environment has `rustc 1.94.0`.
 - The feature-gated playable scene uses Bevy 0.18 until the toolchain can be raised.
-- Playable feel-test command: `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`.
+- Playable feel-test command: `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`, or no args for feature-built binaries such as the Windows artifact. Use `--smoke` to force the non-interactive smoke path. Pressing Space draws a cyan shot trail and yellow final ball marker.
 
 ## Blockers
 

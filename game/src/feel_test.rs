@@ -2,12 +2,16 @@ use std::f64::consts::PI;
 
 use bevy::prelude::*;
 use content_schema::{BallId, BoardDefinition, ObstacleKind, PegKind, ShapeDef};
-use physics_core::{predict_first_bounce, simulate_shot, PhysicsEvent, ShotInput, ShotSummary};
+use physics_core::{
+    predict_first_bounce, sample_shot_trajectory, simulate_shot, PhysicsEvent, ShotInput,
+    ShotSummary,
+};
 
 const BOARD_JSON: &str = include_str!("../assets/content/boards/feel_fan_01.json");
 const BOARD_SCALE: f32 = 22.0;
 const LAUNCH_SPEED: f64 = 24.0;
 const SHOT_SEED: u64 = 1;
+const TRAJECTORY_SAMPLE_EVERY_TICKS: u64 = 6;
 
 pub fn run() {
     let board: BoardDefinition =
@@ -38,6 +42,7 @@ struct FeelTestState {
     last_summary: Option<ShotSummary>,
     hit_peg_ids: Vec<String>,
     first_bounce: Option<PhysicsEvent>,
+    trajectory_points: Vec<content_schema::Vec2>,
 }
 
 impl FeelTestState {
@@ -50,6 +55,7 @@ impl FeelTestState {
             last_summary: None,
             hit_peg_ids: Vec::new(),
             first_bounce: None,
+            trajectory_points: Vec::new(),
         }
     }
 }
@@ -91,6 +97,11 @@ fn handle_input(
         let input = current_shot_input(state.aim_angle_radians);
         let result = simulate_shot(SHOT_SEED, &state.board, &input);
         state.first_bounce = predict_first_bounce(&state.board, &input);
+        state.trajectory_points =
+            sample_shot_trajectory(&state.board, &input, TRAJECTORY_SAMPLE_EVERY_TICKS)
+                .into_iter()
+                .map(|sample| sample.position)
+                .collect();
         state.hit_peg_ids = result
             .summary
             .pegs_hit
@@ -124,6 +135,7 @@ fn refresh_dynamic_overlay(
         &mut meshes,
         &mut materials,
     );
+    spawn_shot_trajectory(&mut commands, &state, &mut meshes, &mut materials);
     spawn_hit_markers(&mut commands, &state, &mut meshes, &mut materials);
     spawn_result_panel(&mut commands, &state, &mut meshes, &mut materials);
     state.drawn_revision = state.revision;
@@ -349,6 +361,50 @@ fn spawn_hit_markers(
             );
             commands.entity(marker).insert(DynamicOverlay);
         }
+    }
+}
+
+fn spawn_shot_trajectory(
+    commands: &mut Commands,
+    state: &FeelTestState,
+    meshes: &mut Assets<Mesh>,
+    materials: &mut Assets<ColorMaterial>,
+) {
+    for points in state.trajectory_points.windows(2) {
+        let [start, end] = points else {
+            continue;
+        };
+        if start == end {
+            continue;
+        }
+        let segment = spawn_segment(
+            commands,
+            meshes,
+            materials,
+            &state.board,
+            SegmentSpec::new(
+                start.x,
+                start.y,
+                end.x,
+                end.y,
+                Color::srgba(0.15, 0.9, 1.0, 0.55),
+                6.0,
+            ),
+        );
+        commands.entity(segment).insert(DynamicOverlay);
+    }
+
+    if let Some(position) = state.trajectory_points.last() {
+        let ball = spawn_circle(
+            commands,
+            meshes,
+            materials,
+            board_to_world(&state.board, position.x, position.y),
+            7.0,
+            Color::srgb(0.98, 1.0, 0.3),
+            7.5,
+        );
+        commands.entity(ball).insert(DynamicOverlay);
     }
 }
 

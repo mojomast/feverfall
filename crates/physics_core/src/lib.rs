@@ -112,6 +112,12 @@ pub struct ShotResult {
     pub remaining_pegs: Vec<PegDef>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrajectorySample {
+    pub tick: Tick,
+    pub position: Vec2,
+}
+
 #[derive(Clone, Debug)]
 struct BallState {
     position: Vec2,
@@ -141,21 +147,69 @@ pub fn predict_first_bounce(board: &BoardDefinition, input: &ShotInput) -> Optio
     predict_first_bounce_with_config(board, input, &SimConfig::default())
 }
 
+pub fn sample_shot_trajectory(
+    board: &BoardDefinition,
+    input: &ShotInput,
+    sample_every_ticks: Tick,
+) -> Vec<TrajectorySample> {
+    sample_shot_trajectory_with_config(board, input, sample_every_ticks, &SimConfig::default())
+}
+
+pub fn sample_shot_trajectory_with_config(
+    board: &BoardDefinition,
+    input: &ShotInput,
+    sample_every_ticks: Tick,
+    config: &SimConfig,
+) -> Vec<TrajectorySample> {
+    let sample_every_ticks = sample_every_ticks.max(1);
+    let mut ball = initial_ball_state(board, input, config);
+    let mut hit_pegs = Vec::new();
+    let mut samples = vec![TrajectorySample {
+        tick: 0,
+        position: ball.position,
+    }];
+
+    for tick in 1..=MAX_TICKS_PER_SHOT {
+        let mut events = Vec::new();
+        integrate_tick(
+            board,
+            input,
+            config,
+            tick,
+            &mut ball,
+            &mut events,
+            &mut hit_pegs,
+        );
+
+        let shot_ended = !is_finite_vec(ball.position)
+            || !is_finite_vec(ball.velocity)
+            || bucket_contains_ball(board, tick, ball.position)
+            || ball.position.y - BALL_RADIUS > board.kill_plane_y
+            || (length(ball.velocity) < config.min_active_speed
+                && ball.position.y > board.size.y * 0.75)
+            || tick >= MAX_TICKS_PER_SHOT;
+
+        if tick % sample_every_ticks == 0 || shot_ended {
+            samples.push(TrajectorySample {
+                tick,
+                position: ball.position,
+            });
+        }
+
+        if shot_ended {
+            break;
+        }
+    }
+
+    samples
+}
+
 pub fn predict_first_bounce_with_config(
     board: &BoardDefinition,
     input: &ShotInput,
     config: &SimConfig,
 ) -> Option<PhysicsEvent> {
-    let mut ball = BallState {
-        position: board.cannon_position,
-        velocity: cap_speed(
-            vec2(
-                input.aim_angle_radians.cos() * input.launch_speed,
-                input.aim_angle_radians.sin() * input.launch_speed,
-            ),
-            config.max_speed_cap,
-        ),
-    };
+    let mut ball = initial_ball_state(board, input, config);
     let mut hit_pegs = Vec::new();
 
     for tick in 1..=MAX_TICKS_PER_SHOT {
@@ -197,16 +251,7 @@ pub fn simulate_shot_with_config(
     let mut events = Vec::new();
     let mut hit_pegs = Vec::new();
     let mut hasher = ReplayHasher::new(seed, board, input, config);
-    let mut ball = BallState {
-        position: board.cannon_position,
-        velocity: cap_speed(
-            vec2(
-                input.aim_angle_radians.cos() * input.launch_speed,
-                input.aim_angle_radians.sin() * input.launch_speed,
-            ),
-            config.max_speed_cap,
-        ),
-    };
+    let mut ball = initial_ball_state(board, input, config);
     let mut caught_bucket = false;
     let mut exited_board = false;
     let mut tick = 0;
@@ -368,6 +413,19 @@ fn integrate_tick(
             ball.velocity = mul(ball.velocity, 0.85);
             break;
         }
+    }
+}
+
+fn initial_ball_state(board: &BoardDefinition, input: &ShotInput, config: &SimConfig) -> BallState {
+    BallState {
+        position: board.cannon_position,
+        velocity: cap_speed(
+            vec2(
+                input.aim_angle_radians.cos() * input.launch_speed,
+                input.aim_angle_radians.sin() * input.launch_speed,
+            ),
+            config.max_speed_cap,
+        ),
     }
 }
 
@@ -1071,6 +1129,26 @@ mod tests {
             "e5e9b4f955205cde05b28df55c8e03a0016220091c14925def3261d8687fc9e2"
         );
         assert_eq!(a.summary.replay_hash.len(), 64);
+    }
+
+    #[test]
+    fn sampled_trajectory_is_deterministic_and_reaches_shot_end_tick() {
+        let board = minimal_test_board();
+        let input = ShotInput {
+            aim_angle_radians: 1.18,
+            launch_speed: 17.5,
+            ball_id: ball_id(),
+        };
+
+        let a = sample_shot_trajectory(&board, &input, 12);
+        let b = sample_shot_trajectory(&board, &input, 12);
+        let result = simulate_shot(123, &board, &input);
+
+        assert_eq!(a, b);
+        assert_eq!(a.first().unwrap().tick, 0);
+        assert_eq!(a.first().unwrap().position, board.cannon_position);
+        assert_eq!(a.last().unwrap().tick, result.summary.ticks);
+        assert!(a.iter().all(|sample| is_finite_vec(sample.position)));
     }
 
     #[test]

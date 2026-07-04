@@ -19,13 +19,20 @@ Playable Bevy feel-test scene:
 cargo run -p feverfall_game --features bevy_feel_test -- --feel-test
 ```
 
-Use Left/Right or A/D to adjust aim and Space to fire a deterministic physics shot on the embedded `boards/feel_fan_01` authored board. The scene uses Bevy 0.18 because Bevy 0.19 declares `rust-version = 1.95.0`, while the current validation environment has `rustc 1.94.0`.
+Feature-built feel-test binaries also launch the playable scene by default when no CLI args are passed. Use Left/Right or A/D to adjust aim and Space to fire a deterministic physics shot on the embedded `boards/feel_fan_01` authored board. Firing draws a cyan trajectory trail and yellow final ball marker. The scene uses Bevy 0.18 because Bevy 0.19 declares `rust-version = 1.95.0`, while the current validation environment has `rustc 1.94.0`.
+
+To force the non-interactive smoke path in a feature-built binary for CI or debugging:
+
+```bash
+cargo run -p feverfall_game --features bevy_feel_test -- --smoke
+```
 
 Native Windows feel-test build:
 
 - Use GitHub Actions workflow `Windows Feel-Test Build` (`.github/workflows/windows-feel-test.yml`) to build the playable Windows binary natively on `windows-latest`.
 - Trigger it manually from GitHub Actions with `Run workflow`, or let it run on pushes touching Cargo, game, physics, board-generation/content-schema, or workflow files.
 - The workflow runs `cargo build -p feverfall_game --features bevy_feel_test --release` and uploads `feverfall_game-windows-x86_64-native` plus `feverfall_game-windows-x86_64-native-sha256` artifacts.
+- The uploaded `feverfall_game.exe` launches the playable scene directly when double-clicked with no CLI args. Run it from a terminal with `--smoke` only when the non-interactive smoke path is desired.
 - This native Windows build exists because the earlier Linux Docker cross-compiled `.exe` was flagged by Windows Defender as `Trojan:Win32/Wacatac.B!ml`, likely due to ML/reputation heuristics. Building on Microsoft-hosted Windows should provide a cleaner provenance path for human feel testing.
 
 Previous local cross-compiled Windows binary checksum:
