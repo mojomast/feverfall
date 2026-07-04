@@ -161,4 +161,30 @@ Checkpoint 2 automated gate notes:
 
 ## Checkpoint 3: Next Target
 
-Status: NOT STARTED / next dispatch target.
+Status: IN PROGRESS.
+
+Completed:
+- [C3-BALANCE] Added `tools/balance_sim` as an isolated 1,000-run headless roguelite batch runner using `board_gen` and `physics_core` directly until the C3 roguelite smoke/headless API lands.
+- [C3-BALANCE] Simulated 1,000 runs with seed range `0xc3ba000000000000` through `0xc3ba0000000003e7`.
+- [C3-BALANCE] Produced `docs/design/balance_notes.md` with methodology, metrics, findings, and concrete tuning recommendations.
+- [C3-BALANCE] Applied high-confidence tuning tables in `content/balance/roguelite/board_curve.toml`, `content/balance/roguelite/reward_pool.toml`, and `content/balance/roguelite/scoring_curve.toml`.
+
+[C3-BALANCE] simulation metrics:
+- Act 1 win rate: 0.0% cleared, 1,000 started.
+- Act 2 win rate: 0.0% cleared, 3 started.
+- Act 3 win rate: 0.0% cleared, 0 started.
+- Average oranges cleared per board: 14.90.
+- Average relics collected per run: 0.00.
+- Average run length: 35.27 shots.
+- Most chosen reward: `relic:boss_feverheart` x2.
+- Least chosen reward: `relic:common_spark_catcher` x1.
+
+[C3-BALANCE] validation completed:
+- `CARGO_TARGET_DIR=/tmp/opencode/feverfall-target cargo run -p balance_sim --release`
+- `cargo fmt --package balance_sim`
+- `cargo run -p content_linter` passes with 46 unique IDs.
+
+[C3-BALANCE] blockers / integration notes:
+- No blocker for the balance artifact.
+- `cargo run -p balance_sim --release` could not use the repo release target because `target/release/.cargo-lock` returned permission denied; using `/tmp/opencode/feverfall-target` completed successfully.
+- Replace `tools/balance_sim` local reward approximation with shared roguelite reward/run APIs after [C3-ROGUELITE] lands.

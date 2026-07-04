@@ -13,6 +13,7 @@ members = [
     "tools/board_validator",
     "tools/content_linter",
     "tools/seed_browser",
+    "tools/balance_sim",
 ]
 resolver = "2"
 

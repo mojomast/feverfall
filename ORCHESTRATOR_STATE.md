@@ -44,6 +44,7 @@ Checkpoint 3: Next dispatch target.
 - [C2-SMOKE-FIX] Updated smoke coverage to include the integrated run summary hash and full C2 automated gates.
 - [C2-REWARD-CLIPPY-FIX] Fixed reward/UI strict-clippy issues while preserving deterministic smoke behavior.
 - [C2-COMPLETE-STATE] Recorded human approval: interactive flow confirmed. Checkpoint 2 is COMPLETE.
+- [C3-BALANCE] Ran 1,000 deterministic roguelite headless balance simulations with seeds `0xc3ba000000000000` through `0xc3ba0000000003e7`, produced `docs/design/balance_notes.md`, added `tools/balance_sim`, and applied high-confidence roguelite tuning tables under `content/balance/roguelite/`.
 
 ## Active Workstreams
 
@@ -52,7 +53,7 @@ Checkpoint 3: Next dispatch target.
 - Content / Progression: Act 1 slice defaults, node path, reward offers, relic/ball/shop content, and boss board validation are available in shared contracts and content data.
 - UI / Feedback / Telemetry: node-map, reward, run-summary, slice summaries, and telemetry mappings pass automated validation; human interactive-flow confirmation is recorded.
 - Checkpoint gate: Checkpoint 2 COMPLETE. Human approval: interactive flow confirmed.
-- Checkpoint 3: NOT STARTED / next dispatch target.
+- Checkpoint 3: IN PROGRESS. [C3-BALANCE] complete; roguelite tuning data and balance tables are available for C3 integration.
 - Tooling gate: CI/local validation includes default, vertical-slice, Act 1 two-board replay hash gates, content lint, board validation, default smoke, and Bevy feel-test smoke/clippy gates.
 
 ## Subagents Dispatched
@@ -86,6 +87,7 @@ Checkpoint 3: Next dispatch target.
 - [C2-CONTENT] Content Agent: relic, ball, shop, and boss-board content schemas/data.
 - [C2-SMOKE-FIX] Smoke Fix Agent: integrated smoke validation/hash stabilization.
 - [C2-REWARD-CLIPPY-FIX] Reward Clippy Fix Agent: strict-clippy cleanup.
+- [C3-BALANCE] Balance Pass Agent: roguelite batch simulation, tuning notes, and balance tables.
 
 ## Files Changed
 
@@ -131,6 +133,11 @@ Checkpoint 3: Next dispatch target.
 - `docs/qa/determinism_checklist.md`
 - `docs/qa/replay_tagging.md`
 - `ORCHESTRATOR_STATE.md`
+- `tools/balance_sim/*`
+- `content/balance/roguelite/board_curve.toml`
+- `content/balance/roguelite/reward_pool.toml`
+- `content/balance/roguelite/scoring_curve.toml`
+- `docs/design/balance_notes.md`
 
 ## Validation Commands Run
 
@@ -148,6 +155,9 @@ Checkpoint 3: Next dispatch target.
 - `cargo run -p feverfall_game --features bevy_feel_test -- --smoke`
 - Docker Windows cross-build: `cargo build -p feverfall_game --features bevy_feel_test --release --target x86_64-pc-windows-gnu`
 - Native Windows feel-test workflow added but not run locally: `Windows Feel-Test Build`.
+- `CARGO_TARGET_DIR=/tmp/opencode/feverfall-target cargo run -p balance_sim --release`
+- `cargo fmt --package balance_sim`
+- `cargo run -p content_linter`
 
 ## Passing Validation
 
@@ -168,6 +178,8 @@ Checkpoint 3: Next dispatch target.
 - Windows binary built successfully at `target/x86_64-pc-windows-gnu/release/feverfall_game.exe`.
 - Windows binary SHA-256: `dac381bb4cbd8c764a779cf9a9bac80cb2f26f505ac4f26e8428701f1ef5b652`.
 - Native GitHub Actions Windows artifact workflow is available but has not been run by this agent.
+- [C3-BALANCE] Headless balance simulation passed: 1,000 runs, seed range `0xc3ba000000000000`-`0xc3ba0000000003e7`; metrics were Act 1 win rate 0.0%, Act 2 win rate 0.0% from 3 starts, Act 3 0 starts, average oranges cleared per board 14.90, average relics collected 0.00, average run length 35.27 shots.
+- [C3-BALANCE] `cargo run -p content_linter` passes with 46 unique IDs after balance-table changes.
 
 ## Failing Validation
 
@@ -177,10 +189,11 @@ Checkpoint 3: Next dispatch target.
 
 - The workspace now pins Rust 1.95.0 via `rust-toolchain.toml`; this unblocks Bevy 0.19 for the feature-gated playable scene.
 - Playable feel-test command: `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`, or no args for feature-built binaries such as the Windows artifact. Use `--smoke` to force the non-interactive smoke path. Pressing Space draws a cyan shot trail and yellow final ball marker.
+- [C3-BALANCE] `cargo run -p balance_sim --release` could not use repo `target/release` because `.cargo-lock` returned permission denied; the full simulation succeeded with `CARGO_TARGET_DIR=/tmp/opencode/feverfall-target`.
 
 ## Blockers
 
-- None.
+- None for [C3-BALANCE].
 
 ## Decisions Needed From Human
 
@@ -208,8 +221,8 @@ Checkpoint 3: Next dispatch target.
 
 ## Next Integration Target
 
-- Checkpoint 3: NOT STARTED / next dispatch target.
+- Checkpoint 3: integrate C3-BALANCE tables with the landed roguelite run APIs once [C3-ROGUELITE] is available.
 
 ## Next Parallel Dispatch
 
-- Start Checkpoint 3 planning/dispatch.
+- Continue Checkpoint 3 integration. Next targets for C3 agents: consume `content/balance/roguelite/*.toml` in roguelite runtime, replace `tools/balance_sim` local reward approximation with shared C3 run/reward APIs, and re-run 1,000+ simulations after runtime consumes the tables.

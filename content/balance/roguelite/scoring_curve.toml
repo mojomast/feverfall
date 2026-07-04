@@ -1,0 +1,49 @@
+id = "balance/roguelite/scoring_curve"
+version = "c3-balance-2026-07-04"
+
+[free_ball_score_thresholds]
+first = 18000
+second = 55000
+third = 95000
+repeat_step = 55000
+
+[[combo_multiplier_curve]]
+hits = 3
+multiplier = 1.25
+
+[[combo_multiplier_curve]]
+hits = 6
+multiplier = 1.75
+
+[[combo_multiplier_curve]]
+hits = 10
+multiplier = 2.50
+
+[[combo_multiplier_curve]]
+hits = 15
+multiplier = 3.50
+
+[[fever_multiplier_curve]]
+oranges_remaining_min = 16
+oranges_remaining_max = 25
+multiplier = 1
+
+[[fever_multiplier_curve]]
+oranges_remaining_min = 10
+oranges_remaining_max = 15
+multiplier = 2
+
+[[fever_multiplier_curve]]
+oranges_remaining_min = 5
+oranges_remaining_max = 9
+multiplier = 3
+
+[[fever_multiplier_curve]]
+oranges_remaining_min = 2
+oranges_remaining_max = 4
+multiplier = 5
+
+[[fever_multiplier_curve]]
+oranges_remaining_min = 0
+oranges_remaining_max = 1
+multiplier = 10

@@ -1,0 +1,29 @@
+id = "balance/roguelite/board_curve"
+version = "c3-balance-2026-07-04"
+
+[[acts]]
+act = 1
+boards = 3
+orange_min = 18
+orange_max = 21
+starting_balls = 12
+elite_orange_bonus = 1
+boss_orange_bonus = 2
+
+[[acts]]
+act = 2
+boards = 3
+orange_min = 22
+orange_max = 26
+starting_balls = 11
+elite_orange_bonus = 2
+boss_orange_bonus = 3
+
+[[acts]]
+act = 3
+boards = 3
+orange_min = 25
+orange_max = 30
+starting_balls = 10
+elite_orange_bonus = 3
+boss_orange_bonus = 4

@@ -1,0 +1,24 @@
+id = "balance/roguelite/reward_pool"
+version = "c3-balance-2026-07-04"
+
+[rarity_weights]
+common = 58
+uncommon = 30
+rare = 12
+
+[reward_type_weights]
+relic = 62
+ball = 18
+coins = 12
+heal = 8
+
+[relic_drop_rates]
+board_clear = 0.62
+elite_clear = 0.90
+boss_clear = 1.00
+early_pity_after_boards_without_relic = 2
+
+[reward_offer]
+choices = 3
+guaranteed_relic_choice_until_relic_count = 2
+duplicate_relic_weight_multiplier = 0.25
