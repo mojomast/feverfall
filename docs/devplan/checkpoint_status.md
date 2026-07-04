@@ -108,7 +108,7 @@ Decision from human:
 
 ## Checkpoint 2: Vertical Slice Alpha
 
-Status: automated C2 gates passing; human interactive-flow confirmation remains the exit blocker/decision. Do not mark Checkpoint 2 complete until that approval is recorded.
+Status: COMPLETE. Human approval: interactive flow confirmed.
 
 Completed:
 - [C2-A] Core vertical-slice gameplay loop added `game/src/vertical_slice.rs`.
@@ -127,6 +127,7 @@ Completed:
 - [C2-I2] Updated QA/playtest/replay docs for integrated C2 smoke and run-summary telemetry.
 - [C2-SMOKE-FIX] Stabilized integrated smoke output and the smoke run summary hash.
 - [C2-REWARD-CLIPPY-FIX] Fixed strict-clippy issues in reward/UI integration.
+- [C2-COMPLETE-STATE] Recorded human approval: interactive flow confirmed. Checkpoint 2 is COMPLETE.
 
 Validation completed:
 - `cargo fmt --all -- --check`
@@ -153,10 +154,11 @@ Checkpoint 2 automated gate notes:
 - Toolchain: Rust 1.95.0 via `rust-toolchain.toml`.
 - Optional playable/smoke feature dependency: Bevy 0.19.
 - `cargo run -p content_linter` passes with 44 unique IDs across board, relic, ball, and shop content.
-- `cargo run -p board_validator` includes `PASS boards/act1_boss_01`.
+- `cargo run -p board_validator` passes all boards, including `PASS boards/act1_boss_01`.
 - `cargo run -p feverfall_game -- --smoke` emits the integrated node/reward/run-summary smoke with hash `0b36add9e9b3283c`.
 - `cargo run -p feverfall_game --features bevy_feel_test -- --smoke` emits feel-test smoke hash `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`.
+- Human approval: interactive flow confirmed.
 
-Next before Checkpoint 2 exit:
-- Human must confirm the integrated interactive flow/feel/scope.
-- If approved, mark Checkpoint 2 complete. If not approved, dispatch targeted fixes from human feedback.
+## Checkpoint 3: Next Target
+
+Status: NOT STARTED / next dispatch target.

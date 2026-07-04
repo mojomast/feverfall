@@ -2,7 +2,7 @@
 
 ## Current Checkpoint
 
-Checkpoint 2: Vertical Slice Alpha.
+Checkpoint 3: Next dispatch target.
 
 ## Completed Since Last Session
 
@@ -43,14 +43,16 @@ Checkpoint 2: Vertical Slice Alpha.
 - [C2-CONTENT] Added C2 content schema/data for relics, balls, shops, and Act 1 boss board content.
 - [C2-SMOKE-FIX] Updated smoke coverage to include the integrated run summary hash and full C2 automated gates.
 - [C2-REWARD-CLIPPY-FIX] Fixed reward/UI strict-clippy issues while preserving deterministic smoke behavior.
+- [C2-COMPLETE-STATE] Recorded human approval: interactive flow confirmed. Checkpoint 2 is COMPLETE.
 
 ## Active Workstreams
 
 - Physics Core & Feel: Checkpoint 1 feel approved; simulator, first-bounce, no-tunneling, wall bounds, and bucket diagnostics passing.
 - Checkpoint 2 Core Loop: deterministic vertical-slice smoke session passing through physics, game rules, node progression, reward selection, run state, RPG state, HUD, feedback, telemetry, run summary, and replay/run-summary hashes.
 - Content / Progression: Act 1 slice defaults, node path, reward offers, relic/ball/shop content, and boss board validation are available in shared contracts and content data.
-- UI / Feedback / Telemetry: node-map, reward, run-summary, slice summaries, and telemetry mappings pass automated validation; human interactive-flow confirmation remains the Checkpoint 2 exit gate.
-- Checkpoint gate: Checkpoint 2 automated gates are passing; do not mark C2 fully complete until human interactive-flow approval is recorded.
+- UI / Feedback / Telemetry: node-map, reward, run-summary, slice summaries, and telemetry mappings pass automated validation; human interactive-flow confirmation is recorded.
+- Checkpoint gate: Checkpoint 2 COMPLETE. Human approval: interactive flow confirmed.
+- Checkpoint 3: NOT STARTED / next dispatch target.
 - Tooling gate: CI/local validation includes default, vertical-slice, Act 1 two-board replay hash gates, content lint, board validation, default smoke, and Bevy feel-test smoke/clippy gates.
 
 ## Subagents Dispatched
@@ -128,6 +130,7 @@ Checkpoint 2: Vertical Slice Alpha.
 - `docs/qa/bug_triage_template.md`
 - `docs/qa/determinism_checklist.md`
 - `docs/qa/replay_tagging.md`
+- `ORCHESTRATOR_STATE.md`
 
 ## Validation Commands Run
 
@@ -148,7 +151,7 @@ Checkpoint 2: Vertical Slice Alpha.
 
 ## Passing Validation
 
-- Formatting, strict clippy, workspace tests, replay runner, vertical-slice replay runner, Act 1 two-board replay runner, board validator, content linter, default game smoke, Bevy feel-test check/clippy, and Bevy feel-test smoke all pass after Checkpoint 2 integration.
+- Formatting, strict clippy, workspace tests, replay runner, vertical-slice replay runner, Act 1 two-board replay runner, board validator, content linter, default game smoke, Bevy feel-test check/clippy, and Bevy feel-test smoke all pass after Checkpoint 2 integration. Human approval: interactive flow confirmed.
 - `cargo test --workspace` includes 16 `physics_core` tests, including first-bounce prediction matching simulation, no tunneling, no NaN, bucket catch, peg clear timing, left/right board wall confinement, damped wall rebound, trajectory sampling determinism, and 10,000 random-ish stress shots.
 - `cargo run -p board_validator` passes authored boards, including `PASS boards/act1_boss_01`.
 - `cargo run -p replay_runner` matches the golden replay hash.
@@ -177,11 +180,11 @@ Checkpoint 2: Vertical Slice Alpha.
 
 ## Blockers
 
-- Human interactive-flow confirmation remains the Checkpoint 2 exit blocker/decision. Automated C2 gates are passing.
+- None.
 
 ## Decisions Needed From Human
 
-- Confirm the integrated Checkpoint 2 interactive flow as acceptable before marking Checkpoint 2 complete.
+- None for Checkpoint 2. Human approval recorded: interactive flow confirmed.
 
 ## Last Replay Hash
 
@@ -205,8 +208,8 @@ Checkpoint 2: Vertical Slice Alpha.
 
 ## Next Integration Target
 
-- Checkpoint 2 human gate: confirm the integrated interactive-flow feel/scope, then mark Checkpoint 2 complete if approved.
+- Checkpoint 3: NOT STARTED / next dispatch target.
 
 ## Next Parallel Dispatch
 
-- After human C2 approval: start Checkpoint 3 planning, or request polish fixes if interactive-flow confirmation finds issues.
+- Start Checkpoint 3 planning/dispatch.
