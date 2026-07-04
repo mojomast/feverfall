@@ -1,0 +1,13 @@
+[package]
+name = "board_gen"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+content_schema = { path = "../content_schema" }
+serde.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true

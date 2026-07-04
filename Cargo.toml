@@ -1,0 +1,26 @@
+[workspace]
+members = [
+    "crates/physics_core",
+    "crates/game_rules",
+    "crates/board_gen",
+    "crates/run_mode",
+    "crates/rpg_mode",
+    "crates/feedback_events",
+    "crates/content_schema",
+    "game",
+    "tools/replay_runner",
+    "tools/board_validator",
+    "tools/content_linter",
+    "tools/seed_browser",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2021"
+license = "UNLICENSED"
+publish = false
+
+[workspace.dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
