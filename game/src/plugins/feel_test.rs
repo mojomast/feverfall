@@ -6,9 +6,11 @@ use physics_core::{
 
 use crate::plugins::{
     debug::DebugOverlayState,
+    feedback::{play_shot_feedback, FeelTestFeedbackPlayback},
     render::FeelTestRenderState,
-    ui::{FeelTestHudParts, FeelTestHudState},
+    ui::{FeelTestHudParts, FeelTestHudState, SliceCompletionSummary},
 };
+use feedback_events::AccessibilityFeedbackFlags;
 
 pub const FEEL_TEST_SEED: u64 = 0xFEE1_FA11;
 const DEFAULT_LAUNCH_SPEED: Scalar = 17.5;
@@ -128,6 +130,7 @@ pub struct FeelTestScene {
     pub shot_count: u32,
     pub mock_score: Score,
     pub last_result: Option<ShotResult>,
+    pub last_feedback: Option<FeelTestFeedbackPlayback>,
     pub playback_snapshot: Option<TrajectoryPlaybackSnapshot>,
     pub hud: FeelTestHudState,
     pub debug: DebugOverlayState,
@@ -150,7 +153,20 @@ impl FeelTestScene {
             launch_speed: DEFAULT_LAUNCH_SPEED,
             ball_id: BallId::new("balls/basic").expect("static id is valid"),
         };
-        let (hud, debug, render) = build_views(&board, &input, None, DEFAULT_BALLS, 0, 0, None);
+        let (hud, debug, render) = build_views(
+            &board,
+            &input,
+            FeelTestHudParts {
+                replay_hash: None,
+                balls_remaining: DEFAULT_BALLS,
+                shot_count: 0,
+                mock_score: 0,
+                collision_count: 0,
+                event_log_summary: String::new(),
+                completion: None,
+            },
+            None,
+        );
 
         Self {
             board,
@@ -160,6 +176,7 @@ impl FeelTestScene {
             shot_count: 0,
             mock_score: 0,
             last_result: None,
+            last_feedback: None,
             playback_snapshot: None,
             hud,
             debug,
@@ -187,8 +204,11 @@ impl FeelTestScene {
             self.balls_remaining += 1;
             self.mock_score += 2_500;
         }
+        let feedback =
+            play_shot_feedback(&self.board, &result, AccessibilityFeedbackFlags::DEFAULT);
         self.playback_snapshot = Some(build_playback_snapshot(&self.board, &self.input));
         self.last_result = Some(result);
+        self.last_feedback = Some(feedback);
         self.refresh_views();
     }
 
@@ -199,7 +219,7 @@ impl FeelTestScene {
             .map(|result| result.summary.replay_hash.as_str())
             .unwrap_or("<none>");
         format!(
-            "feel-test board={} aim_deg={:.2} first_bounce={} shots={} balls={} score={} replay_hash={} {} {}",
+            "feel-test board={} aim_deg={:.2} first_bounce={} shots={} balls={} score={} replay_hash={} {} {} {}",
             self.board.id,
             self.input.aim_angle_radians.to_degrees(),
             self.hud.aim.first_bounce.is_some(),
@@ -208,6 +228,10 @@ impl FeelTestScene {
             self.mock_score,
             replay_hash,
             self.debug.event_log_summary.display_line(),
+            self.hud
+                .completion
+                .as_ref()
+                .map_or_else(|| "slice=<none>".to_owned(), |completion| completion.display_line()),
             self.playback_snapshot_line()
         )
     }
@@ -237,13 +261,34 @@ impl FeelTestScene {
             .last_result
             .as_ref()
             .map(|result| result.events.as_slice());
+        let completion = self.last_result.as_ref().map(|result| {
+            SliceCompletionSummary::from_shot_summary(
+                &self.board,
+                &result.summary,
+                self.mock_score,
+                self.balls_remaining,
+                self.last_feedback
+                    .as_ref()
+                    .map_or(0, |feedback| feedback.summaries.len()),
+            )
+            .with_feedback_events(
+                self.last_feedback
+                    .as_ref()
+                    .map_or(0, |feedback| feedback.events.len()),
+            )
+        });
         let (hud, debug, render) = build_views(
             &self.board,
             &self.input,
-            replay_hash,
-            self.balls_remaining,
-            self.shot_count,
-            self.mock_score,
+            FeelTestHudParts {
+                replay_hash,
+                balls_remaining: self.balls_remaining,
+                shot_count: self.shot_count,
+                mock_score: self.mock_score,
+                collision_count: 0,
+                event_log_summary: String::new(),
+                completion,
+            },
             events,
         );
         self.hud = hud;
@@ -285,30 +330,18 @@ pub fn run_smoke_scene() -> Result<FeelTestScene, FeelTestSceneError> {
 fn build_views(
     board: &BoardDefinition,
     input: &ShotInput,
-    replay_hash: Option<String>,
-    balls_remaining: u32,
-    shot_count: u32,
-    mock_score: Score,
+    mut parts: FeelTestHudParts,
     events: Option<&[physics_core::PhysicsEvent]>,
 ) -> (FeelTestHudState, DebugOverlayState, FeelTestRenderState) {
     let debug = DebugOverlayState::mock_from_board_and_input(
         board,
         input,
-        replay_hash.clone(),
+        parts.replay_hash.clone(),
         events.unwrap_or(&[]).iter().cloned(),
     );
-    let hud = FeelTestHudState::from_scene_parts(
-        board,
-        input,
-        FeelTestHudParts {
-            replay_hash,
-            balls_remaining,
-            shot_count,
-            mock_score,
-            collision_count: debug.event_log_summary.collision_events,
-            event_log_summary: debug.event_log_summary.display_line(),
-        },
-    );
+    parts.collision_count = debug.event_log_summary.collision_events;
+    parts.event_log_summary = debug.event_log_summary.display_line();
+    let hud = FeelTestHudState::from_scene_parts(board, input, parts);
     let render = FeelTestRenderState::from_board_and_debug(board, &debug);
 
     (hud, debug, render)
@@ -353,12 +386,28 @@ mod tests {
         assert_eq!(scene.hud.shot_count, 1);
         assert!(scene.last_result.is_some());
         assert!(scene.hud.replay_hash.is_some());
+        assert!(scene.last_feedback.is_some());
+        assert!(scene.hud.completion.is_some());
         assert_eq!(
             scene.hud.replay_hash,
             scene
                 .last_result
                 .as_ref()
                 .map(|result| result.summary.replay_hash.clone())
+        );
+        let completion = scene.hud.completion.as_ref().unwrap();
+        assert_eq!(completion.score, scene.mock_score);
+        assert_eq!(
+            completion.hit_pegs,
+            scene.last_result.as_ref().unwrap().summary.pegs_hit.len()
+        );
+        assert_eq!(
+            completion.replay_hash,
+            scene.hud.replay_hash.as_ref().unwrap().as_str()
+        );
+        assert_eq!(
+            completion.feedback_cues,
+            scene.last_feedback.as_ref().unwrap().summaries.len()
         );
     }
 
@@ -379,6 +428,8 @@ mod tests {
 
         assert_eq!(scene_a.shot_count, 1);
         assert_eq!(scene_a.hud.replay_hash, scene_b.hud.replay_hash);
+        assert!(scene_a.outcome_line().contains("hit_oranges="));
+        assert!(scene_a.outcome_line().contains("progression="));
         assert_eq!(
             scene_a.debug.event_log_summary,
             scene_b.debug.event_log_summary

@@ -7,6 +7,7 @@ cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 cargo run -p replay_runner
+cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json
 cargo run -p board_validator
 cargo run -p content_linter
 cargo run -p seed_browser -- --act 1 --archetype fan --count 3
@@ -44,6 +45,7 @@ dac381bb4cbd8c764a779cf9a9bac80cb2f26f505ac4f26e8428701f1ef5b652  feverfall_game
 Checkpoint 1 tooling notes:
 
 - `replay_runner` reads `tests/golden_replays/minimal_test.replay.json` by default, or `--replay FILE`. It uses shared `BoardDefinition` and `ShotInput` schemas, runs `physics_core::simulate_shot`, emits a deterministic replay hash, and compares it with `expected_hash`. Fixtures can temporarily set `pending_simulator: true` with no `expected_hash` only if simulator integration regresses or changes API.
+- `tests/golden_replays/vertical_slice_feel_fan.replay.json` is the Checkpoint 2 vertical-slice smoke replay. It references the authored `game/assets/content/boards/feel_fan_01.json` board instead of duplicating board data and uses the same deterministic seed, launch speed, and two-step-left aim as the non-interactive feel-test smoke scene.
 - CI runs the replay hash gate unconditionally. Stricter changed-file gating for physics/content/rules-only replay enforcement is a next step.
 - `board_validator` reads JSON boards from `game/assets/content/boards`, falling back to `minimal_test_board` when no board files exist.
 - `content_linter` walks `game/assets/content`, validates board JSON schemas and content ID conventions, and reports duplicate IDs.

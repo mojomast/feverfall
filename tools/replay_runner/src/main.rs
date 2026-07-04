@@ -9,7 +9,8 @@ const DEFAULT_REPLAY: &str = "tests/golden_replays/minimal_test.replay.json";
 #[derive(Debug, Deserialize)]
 struct ReplayFixture {
     name: String,
-    board: BoardDefinition,
+    board: Option<BoardDefinition>,
+    board_path: Option<PathBuf>,
     #[serde(default)]
     seed: u64,
     shots: Vec<ShotInput>,
@@ -21,13 +22,14 @@ struct ReplayFixture {
 fn main() -> Result<()> {
     let path = replay_path()?;
     let fixture = load_fixture(&path)?;
-    let events = run_replay(&fixture);
+    let board = load_board(&fixture)?;
+    let events = run_replay(&fixture, &board);
     let replay_hash = physics_core::stable_hash_events(&events);
 
     println!(
         "replay {} board={} shots={} hash={replay_hash}",
         fixture.name,
-        fixture.board.id,
+        board.id,
         fixture.shots.len()
     );
     println!(
@@ -90,8 +92,28 @@ fn load_fixture(path: &PathBuf) -> Result<ReplayFixture> {
         .with_context(|| format!("failed to parse replay fixture {}", path.display()))
 }
 
-fn run_replay(fixture: &ReplayFixture) -> Vec<PhysicsEvent> {
-    let mut board = fixture.board.clone();
+fn load_board(fixture: &ReplayFixture) -> Result<BoardDefinition> {
+    match (&fixture.board, &fixture.board_path) {
+        (Some(board), None) => Ok(board.clone()),
+        (None, Some(path)) => {
+            let json = fs::read_to_string(path)
+                .with_context(|| format!("failed to read board fixture {}", path.display()))?;
+            serde_json::from_str(&json)
+                .with_context(|| format!("failed to parse board fixture {}", path.display()))
+        }
+        (Some(_), Some(_)) => Err(anyhow!(
+            "replay fixture {} must set either board or board_path, not both",
+            fixture.name
+        )),
+        (None, None) => Err(anyhow!(
+            "replay fixture {} must set board or board_path",
+            fixture.name
+        )),
+    }
+}
+
+fn run_replay(fixture: &ReplayFixture, board: &BoardDefinition) -> Vec<PhysicsEvent> {
+    let mut board = board.clone();
     let mut events = Vec::new();
     for (index, shot) in fixture.shots.iter().enumerate() {
         let result = physics_core::simulate_shot(fixture.seed + index as u64, &board, shot);

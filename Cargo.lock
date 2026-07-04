@@ -3413,6 +3413,7 @@ name = "telemetry"
 version = "0.1.0"
 dependencies = [
  "content_schema",
+ "game_rules",
  "physics_core",
  "serde",
  "serde_json",

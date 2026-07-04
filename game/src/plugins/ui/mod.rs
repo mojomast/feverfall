@@ -1,8 +1,8 @@
 use content_schema::{
-    minimal_test_board, BallId, BoardDefinition, BoardId, ContentId, RelicId, Scalar, Score,
-    SkillId, Vec2,
+    minimal_test_board, BallId, BoardDefinition, BoardId, ContentId, PegKind, RelicId, Scalar,
+    Score, SkillId, Vec2,
 };
-use physics_core::{predict_first_bounce, PhysicsEvent, ShotInput};
+use physics_core::{predict_first_bounce, PhysicsEvent, ShotInput, ShotSummary};
 use rpg_mode::{CharacterState, SkillState};
 use run_mode::{RelicInstance, RunState};
 
@@ -72,6 +72,7 @@ pub struct FeelTestHudState {
     pub mock_score: Score,
     pub collision_count: usize,
     pub event_log_summary: String,
+    pub completion: Option<SliceCompletionSummary>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -82,6 +83,7 @@ pub struct FeelTestHudParts {
     pub mock_score: Score,
     pub collision_count: usize,
     pub event_log_summary: String,
+    pub completion: Option<SliceCompletionSummary>,
 }
 
 impl FeelTestHudState {
@@ -99,6 +101,7 @@ impl FeelTestHudState {
             mock_score: parts.mock_score,
             collision_count: parts.collision_count,
             event_log_summary: parts.event_log_summary,
+            completion: parts.completion,
         }
     }
 
@@ -125,9 +128,98 @@ impl FeelTestHudState {
                 mock_score,
                 collision_count,
                 event_log_summary: event_log_summary.into(),
+                completion: Some(SliceCompletionSummary::from_shot_summary(
+                    board,
+                    summary,
+                    mock_score,
+                    balls_remaining,
+                    0,
+                )),
             },
         )
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SliceCompletionSummary {
+    pub score: Score,
+    pub hit_pegs: usize,
+    pub hit_oranges: usize,
+    pub caught_bucket: bool,
+    pub replay_hash: String,
+    pub progression_outcome: SliceProgressionOutcome,
+    pub feedback_events: usize,
+    pub feedback_cues: usize,
+}
+
+impl SliceCompletionSummary {
+    pub fn from_shot_summary(
+        board: &BoardDefinition,
+        summary: &ShotSummary,
+        score: Score,
+        balls_remaining: u32,
+        feedback_cues: usize,
+    ) -> Self {
+        let hit_oranges = summary
+            .pegs_hit
+            .iter()
+            .filter(|hit| {
+                board
+                    .pegs
+                    .iter()
+                    .any(|peg| peg.id == **hit && peg.kind == PegKind::Orange)
+            })
+            .count();
+        let total_oranges = board
+            .pegs
+            .iter()
+            .filter(|peg| peg.kind == PegKind::Orange)
+            .count();
+        let progression_outcome = if hit_oranges >= total_oranges && total_oranges > 0 {
+            SliceProgressionOutcome::BoardWon
+        } else if balls_remaining == 0 {
+            SliceProgressionOutcome::BoardLost
+        } else {
+            SliceProgressionOutcome::Continue
+        };
+
+        Self {
+            score,
+            hit_pegs: summary.pegs_hit.len(),
+            hit_oranges,
+            caught_bucket: summary.caught_bucket,
+            replay_hash: summary.replay_hash.clone(),
+            progression_outcome,
+            feedback_events: 0,
+            feedback_cues,
+        }
+    }
+
+    pub fn with_feedback_events(mut self, feedback_events: usize) -> Self {
+        self.feedback_events = feedback_events;
+        self
+    }
+
+    pub fn display_line(&self) -> String {
+        format!(
+            "slice score={} hit_pegs={} hit_oranges={} result={} replay_hash={} progression={:?} feedback_events={} feedback_cues={}",
+            self.score,
+            self.hit_pegs,
+            self.hit_oranges,
+            if self.caught_bucket { "catch" } else { "miss" },
+            self.replay_hash,
+            self.progression_outcome,
+            self.feedback_events,
+            self.feedback_cues,
+        )
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SliceProgressionOutcome {
+    Continue,
+    BoardWon,
+    BoardLost,
 }
 
 impl HudState {
@@ -436,7 +528,12 @@ mod tests {
         assert_eq!(hud.shot_count, 1);
         assert_eq!(hud.balls_remaining, 8);
         assert!(hud.aim.first_bounce.is_some());
-        assert_eq!(hud.replay_hash, Some(result.summary.replay_hash));
+        assert_eq!(hud.replay_hash, Some(result.summary.replay_hash.clone()));
         assert!(hud.collision_count > 0);
+        let completion = hud.completion.unwrap();
+        assert_eq!(completion.score, hud.mock_score);
+        assert_eq!(completion.hit_pegs, result.summary.pegs_hit.len());
+        assert_eq!(completion.caught_bucket, result.summary.caught_bucket);
+        assert_eq!(completion.feedback_cues, 0);
     }
 }

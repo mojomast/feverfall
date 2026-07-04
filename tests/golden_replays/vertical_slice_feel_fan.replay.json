@@ -1,0 +1,14 @@
+{
+  "name": "vertical_slice_feel_fan",
+  "board_path": "game/assets/content/boards/feel_fan_01.json",
+  "seed": 4276222481,
+  "shots": [
+    {
+      "aim_angle_radians": 1.4835298641951802,
+      "launch_speed": 17.5,
+      "ball_id": "balls/basic"
+    }
+  ],
+  "expected_hash": "39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383",
+  "pending_simulator": false
+}

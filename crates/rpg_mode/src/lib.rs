@@ -24,6 +24,30 @@ impl CharacterState {
             campaign_flags: Vec::new(),
         }
     }
+
+    pub fn act1_slice() -> Self {
+        let mut state = Self::new(ContentId::new("characters/ember").expect("static id is valid"));
+        state.stats = Stats::act1_slice();
+        state.gear = vec![
+            EquippedGear {
+                slot: GearSlot::Launcher,
+                item: GearId::new("gear/act1/starter_launcher").expect("static id is valid"),
+            },
+            EquippedGear {
+                slot: GearSlot::CoreBall,
+                item: GearId::new("gear/act1/basic_core").expect("static id is valid"),
+            },
+        ];
+        state.unlocked_skills.push(SkillState {
+            id: SkillId::new("skills/act1/steady_shot").expect("static id is valid"),
+            rank: 1,
+            equipped: true,
+        });
+        state
+            .campaign_flags
+            .push(ContentId::new("campaign/act1_slice_unlocked").expect("static id is valid"));
+        state
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -43,6 +67,18 @@ impl Default for Stats {
             combo_focus: 1,
             skill_charge: 1,
             resilience: 1,
+        }
+    }
+}
+
+impl Stats {
+    pub fn act1_slice() -> Self {
+        Self {
+            aim_control: 2,
+            bucket_control: 2,
+            combo_focus: 1,
+            skill_charge: 1,
+            resilience: 2,
         }
     }
 }
@@ -109,5 +145,18 @@ mod tests {
         let parsed: CharacterState = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed, state);
+    }
+
+    #[test]
+    fn act1_slice_character_has_equipment_and_skill() {
+        let state = CharacterState::act1_slice();
+
+        assert_eq!(state.character_id.as_str(), "characters/ember");
+        assert_eq!(state.level, 1);
+        assert_eq!(state.stats.aim_control, 2);
+        assert_eq!(state.gear.len(), 2);
+        assert_eq!(state.unlocked_skills.len(), 1);
+        assert!(state.unlocked_skills[0].equipped);
+        assert_eq!(state.campaign_flags.len(), 1);
     }
 }

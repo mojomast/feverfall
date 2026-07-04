@@ -1,4 +1,5 @@
 mod plugins;
+mod vertical_slice;
 
 #[cfg(feature = "bevy_feel_test")]
 mod feel_test;
@@ -14,6 +15,11 @@ fn main() {
     let summary = plugins::register_placeholders();
     println!("Feverfall app skeleton ready. Enable --features bevy_feel_test for the playable Bevy feel-test scene, or pass --smoke to force this smoke path.");
     println!("{summary}");
+
+    match vertical_slice::run_smoke_session() {
+        Ok(session) => println!("{}", session.smoke_summary()),
+        Err(error) => eprintln!("checkpoint2 vertical slice unavailable: {error}"),
+    }
 
     match plugins::feel_test::run_smoke_scene() {
         Ok(scene) => println!("{}", scene.outcome_line()),

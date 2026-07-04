@@ -1,6 +1,6 @@
 # Determinism Validation Checklist
 
-Run this for Checkpoint 1 physics or telemetry changes.
+Run this for physics or telemetry changes. For Checkpoint 2 vertical-slice QA, also capture one short end-to-end run.
 
 ## Required Commands
 
@@ -16,6 +16,9 @@ Run this for Checkpoint 1 physics or telemetry changes.
 - JSONL logs contain no player name, email, IP address, or machine-specific path.
 - Bug reports include board ID, seed, shot index, replay hash, and build ID.
 - Any changed golden replay hash has an accepted physics/rules reason documented in review notes.
+- Short vertical-slice run logs shot result via `ShotResolved`: board ID, shot index, tick count, peg count, bucket catch flag, exit flag, and replay hash.
+- Score/progression outcome is logged from `game_rules::GameEvent` using `ShotScoreResolved`, `BoardWon`, or `BoardLost` telemetry.
+- Failure/catch notes are attached to the replay hash with `ReplayTagged` labels, not stored in private QA-only schemas.
 
 ## Failure Response
 
@@ -23,3 +26,4 @@ Run this for Checkpoint 1 physics or telemetry changes.
 - Save the replay fixture and JSONL log.
 - File a bug with `docs/qa/bug_triage_template.md`.
 - Mark whether the failure is deterministic wrong behavior or nondeterministic behavior.
+- Tag the replay with `VerticalSliceFailure`, `BucketCatchMissed`, `BucketCatchSatisfying`, or `PhysicsFeltUnfair` as applicable.

@@ -20,6 +20,8 @@ jobs:
         run: cargo test --workspace
       - name: Replay hash gate
         run: cargo run -p replay_runner
+      - name: Vertical slice replay gate
+        run: cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json
       - name: Board validation
         run: cargo run -p board_validator
       - name: Content lint

@@ -1,13 +1,16 @@
 use std::f64::consts::PI;
 
 use bevy::prelude::*;
-use content_schema::{BallId, BoardDefinition, ObstacleKind, PegKind, ShapeDef};
+use content_schema::{BallId, BoardDefinition, ObstacleKind, PegKind, Score, ShapeDef};
+use feedback_events::AccessibilityFeedbackFlags;
 use physics_core::{
     predict_first_bounce, sample_shot_trajectory, simulate_shot, PhysicsEvent, ShotInput,
     ShotSummary,
 };
 
-use crate::plugins::feel_test::TrajectoryPlaybackCursor;
+use crate::plugins::{
+    feedback::play_shot_feedback, feel_test::TrajectoryPlaybackCursor, ui::SliceCompletionSummary,
+};
 
 const BOARD_JSON: &str = include_str!("../assets/content/boards/feel_fan_01.json");
 const BOARD_SCALE: f32 = 22.0;
@@ -46,6 +49,8 @@ struct FeelTestState {
     revision: u64,
     drawn_revision: u64,
     last_summary: Option<ShotSummary>,
+    last_completion: Option<SliceCompletionSummary>,
+    mock_score: Score,
     hit_peg_ids: Vec<String>,
     first_bounce: Option<PhysicsEvent>,
     trajectory_points: Vec<content_schema::Vec2>,
@@ -61,6 +66,8 @@ impl FeelTestState {
             revision: 1,
             drawn_revision: 0,
             last_summary: None,
+            last_completion: None,
+            mock_score: 0,
             hit_peg_ids: Vec::new(),
             first_bounce: None,
             trajectory_points: Vec::new(),
@@ -114,6 +121,22 @@ fn handle_input(
     if keys.just_pressed(KeyCode::Space) {
         let input = current_shot_input(state.aim_angle_radians);
         let result = simulate_shot(SHOT_SEED, &state.board, &input);
+        state.mock_score += result.summary.pegs_hit.len() as Score * 100;
+        if result.summary.caught_bucket {
+            state.mock_score += 2_500;
+        }
+        let feedback =
+            play_shot_feedback(&state.board, &result, AccessibilityFeedbackFlags::DEFAULT);
+        state.last_completion = Some(
+            SliceCompletionSummary::from_shot_summary(
+                &state.board,
+                &result.summary,
+                state.mock_score,
+                1,
+                feedback.summaries.len(),
+            )
+            .with_feedback_events(feedback.events.len()),
+        );
         state.first_bounce = predict_first_bounce(&state.board, &input);
         let samples = sample_shot_trajectory(&state.board, &input, TRAJECTORY_SAMPLE_EVERY_TICKS);
         let playback = TrajectoryPlaybackCursor::new(samples, PLAYBACK_TICKS_PER_SECOND);
@@ -482,6 +505,55 @@ fn spawn_result_panel(
         ),
     );
     commands.entity(panel).insert(DynamicOverlay);
+
+    let Some(completion) = &state.last_completion else {
+        return;
+    };
+
+    for index in 0..completion.hit_pegs.min(16) {
+        let pip = spawn_circle(
+            commands,
+            meshes,
+            materials,
+            Vec2::new(x - 14.0 + index as f32 * 7.0, y - 16.0),
+            3.0,
+            Color::srgb(0.2, 0.55, 1.0),
+            8.2,
+        );
+        commands.entity(pip).insert(DynamicOverlay);
+    }
+
+    for index in 0..completion.hit_oranges.min(8) {
+        let pip = spawn_circle(
+            commands,
+            meshes,
+            materials,
+            Vec2::new(x - 14.0 + index as f32 * 9.0, y - 25.0),
+            4.0,
+            Color::srgb(1.0, 0.48, 0.08),
+            8.3,
+        );
+        commands.entity(pip).insert(DynamicOverlay);
+    }
+
+    let outcome_color = match completion.progression_outcome {
+        crate::plugins::ui::SliceProgressionOutcome::Continue => Color::srgb(0.9, 0.82, 0.25),
+        crate::plugins::ui::SliceProgressionOutcome::BoardWon => Color::srgb(0.2, 1.0, 0.35),
+        crate::plugins::ui::SliceProgressionOutcome::BoardLost => Color::srgb(1.0, 0.18, 0.18),
+    };
+    let outcome = spawn_rect(
+        commands,
+        meshes,
+        materials,
+        RectSpec::new(
+            Vec2::new(x + 34.0, y),
+            Vec2::new(8.0, 18.0),
+            outcome_color,
+            8.4,
+            0.0,
+        ),
+    );
+    commands.entity(outcome).insert(DynamicOverlay);
 }
 
 fn spawn_circle(

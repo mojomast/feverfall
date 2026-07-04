@@ -26,7 +26,7 @@ Next checkpoint:
 
 ## Checkpoint 1: Physics Feel Alpha
 
-Status: playable feel-test scene implemented; blocked on human physics-feel judgment before Checkpoint 2.
+Status: complete. Human approved Physics Feel Alpha after the tuned native Windows build.
 
 Completed:
 - [A] Physics Core & Feel Agent implemented deterministic fixed-step shot simulation in `crates/physics_core`.
@@ -96,12 +96,46 @@ Last replay hash:
 - `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`
 
 Remaining before Checkpoint 1 exit:
-- Human feel validation approval from the playable scene, or two additional tuning iterations with specific feedback before proceeding to Checkpoint 2.
+- None. Physics Feel Alpha is approved.
 - Bevy 0.19 remains blocked in this environment because it requires `rustc 1.95.0`; current validation uses Bevy 0.18 with `rustc 1.94.0`.
 
 Playable feel-test command:
 - `cargo run -p feverfall_game --features bevy_feel_test -- --feel-test`
 - Controls: Left/Right or A/D adjusts aim; Space fires a deterministic shot, animates a yellow ball, and reveals a cyan shot trail progressively.
 
-Decision needed from human:
-- Run the playable feel-test scene and approve Physics Feel Alpha for Checkpoint 2, or request tuning iteration 2 with a specific target: too floaty, too chaotic, catch too forgiving, catch too strict, or first bounce unreadable.
+Decision from human:
+- Physics Feel Alpha approved for Checkpoint 2.
+
+## Checkpoint 2: Vertical Slice Alpha
+
+Status: automated smoke slice implemented; playable run UI/reward flow remains next work.
+
+Completed:
+- [C2-A] Core vertical-slice gameplay loop added `game/src/vertical_slice.rs`.
+- [C2-A] Smoke session loads authored `boards/feel_fan_01`, simulates a scripted shot with `physics_core`, promotes events with `game_rules`, updates `run_mode::RunState` and `rpg_mode::CharacterState`, and prints a deterministic summary from `cargo run -p feverfall_game -- --smoke`.
+- [C2-B] Content/progression support added `RunState::act1_slice`, Act 1 slice run nodes, reward offers, `CharacterState::act1_slice`, starter stats, gear, skill, and tests.
+- [C2-FE] Runtime UI/feedback added `SliceCompletionSummary`, score/orange/catch/replay/progression/feedback fields, feel-test smoke outcome details, and small Bevy completion markers while preserving animated shot playback.
+- [C2-G] Tooling added `tests/golden_replays/vertical_slice_feel_fan.replay.json`, `board_path` fixture support in `replay_runner`, CI replay coverage, and local validation docs.
+- [C2-I] QA/telemetry added vertical-slice shot result and score/progression telemetry mappings, replay labels, and QA/playtest doc updates.
+
+Validation completed:
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `cargo test --workspace`
+- `cargo run -p replay_runner`
+- `cargo run -p replay_runner -- --replay tests/golden_replays/vertical_slice_feel_fan.replay.json`
+- `cargo run -p board_validator`
+- `cargo run -p content_linter`
+- `cargo run -p seed_browser -- --act 1 --archetype fan --count 3`
+- `cargo run -p feverfall_game -- --smoke`
+- `cargo check -p feverfall_game --features bevy_feel_test`
+- `cargo clippy -p feverfall_game --features bevy_feel_test --all-targets -- -D warnings`
+
+Checkpoint 2 hashes:
+- Default minimal replay hash: `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`
+- Vertical-slice replay fixture hash: `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`
+- Current smoke-session vertical-slice replay hash: `a8112f9a7503ebb21431369ae0f354e7cf0687ba2b5576da3b7d43fa4b411a8a`
+
+Next before Checkpoint 2 exit:
+- Build a fuller interactive vertical slice around board/node progression and reward choice presentation.
+- Optionally publish a native Windows build after the next playable vertical-slice increment.

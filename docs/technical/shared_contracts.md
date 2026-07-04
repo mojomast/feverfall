@@ -42,3 +42,5 @@ Feature crates must depend on these owners instead of creating private lookalike
 - `telemetry::JsonlTelemetryLogger` writes one `TelemetryEnvelope` per JSONL line to a caller-provided writer.
 - Telemetry observes cloned IDs, positions, ticks, and hashes. It must not mutate board, replay, or physics simulation state.
 - `telemetry::ReplayTag` annotates deterministic replay hashes for QA triage and feel analysis.
+- `telemetry::shot_summary_to_telemetry` records the vertical-slice shot result from `physics_core::ShotSummary`, including replay hash, peg count, catch flag, exit flag, and tick count.
+- `telemetry::game_event_to_telemetry` records score and board progression outcomes from `game_rules::GameEvent`; callers should not create private score/progression telemetry schemas.

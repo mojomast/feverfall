@@ -1,11 +1,12 @@
 use content_schema::{
-    BallId, BoardId, ContentId, PegId, RelicId, Scalar, Seed, SkillId, Tick, Vec2,
+    BallId, BoardId, ContentId, PegId, RelicId, Scalar, Score, Seed, SkillId, Tick, Vec2,
 };
-use physics_core::PhysicsEvent;
+use game_rules::{GameEvent, LossReason};
+use physics_core::{PhysicsEvent, ShotSummary};
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
 
-pub const TELEMETRY_SCHEMA_VERSION: &str = "telemetry/0.1.0-checkpoint1";
+pub const TELEMETRY_SCHEMA_VERSION: &str = "telemetry/0.2.0-checkpoint2";
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelemetryEnvelope {
@@ -35,9 +36,24 @@ pub enum TelemetryEvent {
         ball: BallId,
         tick: Tick,
     },
+    ShotResolved {
+        board: BoardId,
+        shot_index: u32,
+        ticks: Tick,
+        pegs_hit: u32,
+        caught_bucket: bool,
+        exited_board: bool,
+        replay_hash: String,
+    },
+    ShotScoreResolved {
+        base_score: Score,
+        fever_multiplier: u32,
+        combo_multiplier: u32,
+        final_score: Score,
+    },
     BoardWon {
         board: BoardId,
-        final_score: i64,
+        final_score: Score,
     },
     BoardLost {
         board: BoardId,
@@ -74,9 +90,27 @@ pub enum ReplayLabel {
     FeelTooFloaty,
     FeelTooPinball,
     BucketCatchSatisfying,
+    BucketCatchMissed,
     PhysicsFeltUnfair,
     FirstBounceReadable,
+    VerticalSliceFailure,
     Custom(String),
+}
+
+pub fn shot_summary_to_telemetry(
+    board: BoardId,
+    shot_index: u32,
+    summary: &ShotSummary,
+) -> TelemetryEvent {
+    TelemetryEvent::ShotResolved {
+        board,
+        shot_index,
+        ticks: summary.ticks,
+        pegs_hit: summary.pegs_hit.len() as u32,
+        caught_bucket: summary.caught_bucket,
+        exited_board: summary.exited_board,
+        replay_hash: summary.replay_hash.clone(),
+    }
 }
 
 pub struct JsonlTelemetryLogger<W> {
@@ -136,10 +170,48 @@ pub fn physics_event_to_telemetry(event: &PhysicsEvent) -> Option<TelemetryEvent
     }
 }
 
+pub fn game_event_to_telemetry(event: &GameEvent) -> Option<TelemetryEvent> {
+    match event {
+        GameEvent::ShotScoreResolved {
+            base_score,
+            fever_multiplier,
+            combo_multiplier,
+            final_score,
+        } => Some(TelemetryEvent::ShotScoreResolved {
+            base_score: *base_score,
+            fever_multiplier: *fever_multiplier,
+            combo_multiplier: *combo_multiplier,
+            final_score: *final_score,
+        }),
+        GameEvent::BoardWon { board, final_score } => Some(TelemetryEvent::BoardWon {
+            board: board.clone(),
+            final_score: *final_score,
+        }),
+        GameEvent::BoardLost { board, reason } => Some(TelemetryEvent::BoardLost {
+            board: board.clone(),
+            reason: loss_reason_id(*reason),
+        }),
+        GameEvent::SkillUsed { skill } => Some(TelemetryEvent::SkillUsed {
+            skill: skill.clone(),
+        }),
+        _ => None,
+    }
+}
+
+fn loss_reason_id(reason: LossReason) -> ContentId {
+    let id = match reason {
+        LossReason::OutOfShots => "loss/out_of_shots",
+        LossReason::ObjectiveFailed => "loss/objective_failed",
+        LossReason::Forfeit => "loss/forfeit",
+    };
+    ContentId::new(id).expect("loss reason ids are valid content ids")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use content_schema::{minimal_test_board, BallId};
+    use content_schema::{minimal_test_board, BallId, BoardId};
+    use game_rules::LossReason;
     use physics_core::{simulate_shot, ShotInput};
 
     fn shot_input() -> ShotInput {
@@ -196,5 +268,58 @@ mod tests {
         let after = simulate_shot(123, &board, &input);
 
         assert_eq!(before.summary.replay_hash, after.summary.replay_hash);
+    }
+
+    #[test]
+    fn shot_summary_maps_to_vertical_slice_result_event() {
+        let board = minimal_test_board();
+        let input = shot_input();
+        let result = simulate_shot(123, &board, &input);
+
+        let event = shot_summary_to_telemetry(board.id.clone(), 2, &result.summary);
+
+        assert_eq!(
+            event,
+            TelemetryEvent::ShotResolved {
+                board: board.id,
+                shot_index: 2,
+                ticks: result.summary.ticks,
+                pegs_hit: result.summary.pegs_hit.len() as u32,
+                caught_bucket: result.summary.caught_bucket,
+                exited_board: result.summary.exited_board,
+                replay_hash: result.summary.replay_hash,
+            }
+        );
+    }
+
+    #[test]
+    fn game_events_map_to_score_and_progression_telemetry() {
+        let score_event = GameEvent::ShotScoreResolved {
+            base_score: 100,
+            fever_multiplier: 2,
+            combo_multiplier: 3,
+            final_score: 600,
+        };
+        let lost_event = GameEvent::BoardLost {
+            board: BoardId::new("boards/minimal_test").unwrap(),
+            reason: LossReason::OutOfShots,
+        };
+
+        assert_eq!(
+            game_event_to_telemetry(&score_event),
+            Some(TelemetryEvent::ShotScoreResolved {
+                base_score: 100,
+                fever_multiplier: 2,
+                combo_multiplier: 3,
+                final_score: 600,
+            })
+        );
+        assert_eq!(
+            game_event_to_telemetry(&lost_event),
+            Some(TelemetryEvent::BoardLost {
+                board: BoardId::new("boards/minimal_test").unwrap(),
+                reason: ContentId::new("loss/out_of_shots").unwrap(),
+            })
+        );
     }
 }
