@@ -24,6 +24,7 @@ Checkpoint 1: Physics Feel Alpha.
 - [F] Option C implemented the feel-test scene model with aim adjustment, deterministic shot simulation, first-bounce data, replay hash, HUD/debug summaries, and tests.
 - [E] Option C wired feel-test shot results to existing feedback VFX/audio cue summaries with accessibility reductions.
 - Built Windows x86_64 feel-test binary for human testing from the current Checkpoint 1 source.
+- [G] Added a manually runnable native Windows GitHub Actions feel-test build workflow that uploads the `.exe` and SHA-256 checksum artifacts. Not yet run by this agent.
 
 ## Active Workstreams
 
@@ -54,6 +55,7 @@ Checkpoint 1: Physics Feel Alpha.
 - `Cargo.toml`
 - `.gitignore`
 - `.github/workflows/ci.yml`
+- `.github/workflows/windows-feel-test.yml`
 - `crates/content_schema/*`
 - `crates/physics_core/*`
 - `crates/game_rules/*`
@@ -95,6 +97,7 @@ Checkpoint 1: Physics Feel Alpha.
 - `cargo check -p feverfall_game --features bevy_feel_test`
 - `cargo clippy -p feverfall_game --features bevy_feel_test --all-targets -- -D warnings`
 - Docker Windows cross-build: `cargo build -p feverfall_game --features bevy_feel_test --release --target x86_64-pc-windows-gnu`
+- Native Windows feel-test workflow added but not run locally: `Windows Feel-Test Build`.
 
 ## Passing Validation
 
@@ -108,6 +111,7 @@ Checkpoint 1: Physics Feel Alpha.
 - Feature-gated playable Bevy feel-test compiles and passes clippy with `bevy_feel_test` enabled.
 - Windows binary built successfully at `target/x86_64-pc-windows-gnu/release/feverfall_game.exe`.
 - Windows binary SHA-256: `dac381bb4cbd8c764a779cf9a9bac80cb2f26f505ac4f26e8428701f1ef5b652`.
+- Native GitHub Actions Windows artifact workflow is available but has not been run by this agent.
 
 ## Failing Validation
 

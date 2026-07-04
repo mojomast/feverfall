@@ -1,0 +1,40 @@
+name: Windows Feel-Test Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "game/**"
+      - "crates/physics_core/**"
+      - "crates/board_gen/**"
+      - "crates/content_schema/**"
+      - ".github/workflows/windows-feel-test.yml"
+
+jobs:
+  build:
+    name: Native Windows feel-test binary
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release feel-test binary
+        run: cargo build -p feverfall_game --features bevy_feel_test --release
+      - name: Write SHA-256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash target\release\feverfall_game.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  feverfall_game.exe" | Set-Content target\release\feverfall_game.exe.sha256
+      - name: Upload Windows executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: feverfall_game-windows-x86_64-native
+          path: target\release\feverfall_game.exe
+          if-no-files-found: error
+      - name: Upload SHA-256 checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: feverfall_game-windows-x86_64-native-sha256
+          path: target\release\feverfall_game.exe.sha256
+          if-no-files-found: error

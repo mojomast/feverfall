@@ -21,13 +21,14 @@ cargo run -p feverfall_game --features bevy_feel_test -- --feel-test
 
 Use Left/Right or A/D to adjust aim and Space to fire a deterministic physics shot on the embedded `boards/feel_fan_01` authored board. The scene uses Bevy 0.18 because Bevy 0.19 declares `rust-version = 1.95.0`, while the current validation environment has `rustc 1.94.0`.
 
-Windows test build command used by the orchestrator:
+Native Windows feel-test build:
 
-```bash
-docker run --rm -v "$PWD":/project -w /project ghcr.io/cross-rs/x86_64-pc-windows-gnu:main bash -lc 'apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.94.0 --target x86_64-pc-windows-gnu && . "$HOME/.cargo/env" && cargo build -p feverfall_game --features bevy_feel_test --release --target x86_64-pc-windows-gnu'
-```
+- Use GitHub Actions workflow `Windows Feel-Test Build` (`.github/workflows/windows-feel-test.yml`) to build the playable Windows binary natively on `windows-latest`.
+- Trigger it manually from GitHub Actions with `Run workflow`, or let it run on pushes touching Cargo, game, physics, board-generation/content-schema, or workflow files.
+- The workflow runs `cargo build -p feverfall_game --features bevy_feel_test --release` and uploads `feverfall_game-windows-x86_64-native` plus `feverfall_game-windows-x86_64-native-sha256` artifacts.
+- This native Windows build exists because the earlier Linux Docker cross-compiled `.exe` was flagged by Windows Defender as `Trojan:Win32/Wacatac.B!ml`, likely due to ML/reputation heuristics. Building on Microsoft-hosted Windows should provide a cleaner provenance path for human feel testing.
 
-Latest local Windows binary checksum:
+Previous local cross-compiled Windows binary checksum:
 
 ```text
 dac381bb4cbd8c764a779cf9a9bac80cb2f26f505ac4f26e8428701f1ef5b652  feverfall_game.exe
