@@ -338,6 +338,7 @@ Checkpoint 4: IN PROGRESS. [C4-G] final tooling/release gate is implemented and 
 - [C4-ACT4] `cargo run -p replay_runner -- --replay tests/golden_replays/roguelite_act1to3_smoke.replay.json` preserves `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`.
 - [C4-ACT4] `cargo run -p feverfall_game -- --smoke` passes and prints roguelite Act 1-3 summary hash `e72374145338c3b3`, Act 4 derived seed `14462389677421375956`, and full Act 1-4 summary hash `152fc850303d8356`.
 - [C4-ACT4] `cargo run -p feverfall_game -- --smoke-full` passes all included content, board, and replay gates with `smoke-full summary: PASS checks=12 replays=7`.
+- [C4-ACT4] Artifact SHA-256: `crates/run_mode/src/lib.rs` `1e3de118d76c3f4601a7bbe71c9fcc0c589048c028b77e871aef1a8741b8a63e`; `game/src/vertical_slice.rs` `8feb8200bc147b96b2578665f4251e5812e6568f6402cd4773da74599e00aa39`; `game/src/main.rs` `2fe8c1897af5822f26b710bebfc9977f6cc782fe4d9bff2d94fd798fb9066068`; `docs/technical/shared_contracts.md` `c494c0adbea1369d5b498370c718da20620edd0dec70c0066a775f52a19a5900`; `docs/devplan/checkpoint_status.md` `baace75b31fd30c83dd614c648b05c1c3b1e99960986a4e1dd55108ef2eeb811`.
 
 ## Failing Validation
 
