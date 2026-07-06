@@ -45,8 +45,16 @@ cargo run -p feverfall_game -- --smoke-full
 
 `--smoke-full` runs C2 vertical-slice smoke, RPG Chapter 1 and campaign Chapter 1/3/5 smoke, roguelite Acts 1-4 smoke, feel-test smoke, full content lint, board validation, and every golden replay fixture.
 
+## Windows Release
+
+A Windows executable is built automatically by GitHub Actions:
+
+- **Workflow dispatch**: Go to **Actions > Windows Release Build > Run workflow** to build and upload an artifact.
+- **Tagged release**: Push a tag like `v0.1.0` and the workflow will create a GitHub Release with `feverfall_game.exe` and its SHA-256 checksum attached.
+
+The release build runs the full `--smoke-full` gate before producing the binary.
+
 ## Known Gaps
 
-- Public Windows Checkpoint 4 artifact requires the GitHub workflow to run from a pushed ref containing the C4 `--smoke-full` workflow update.
 - Web build/release automation is not implemented.
 - Runtime visuals/audio remain placeholder systems until production assets are added.

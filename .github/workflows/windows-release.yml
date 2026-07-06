@@ -1,0 +1,53 @@
+name: Windows Release Build
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Windows executable
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.95.0
+
+      - name: Full release smoke gate
+        run: cargo run -p feverfall_game -- --smoke-full
+
+      - name: Build release executable
+        run: cargo build -p feverfall_game --release
+
+      - name: Compute SHA-256 checksum
+        shell: pwsh
+        run: |
+          $hash = (Get-FileHash target\release\feverfall_game.exe -Algorithm SHA256).Hash.ToLower()
+          "$hash  feverfall_game.exe" | Set-Content target\release\feverfall_game.exe.sha256
+
+      - name: Upload Windows executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feverfall_game-windows-x86_64
+          path: target\release\feverfall_game.exe
+          if-no-files-found: error
+
+      - name: Upload SHA-256 checksum artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feverfall_game-windows-x86_64-sha256
+          path: target\release\feverfall_game.exe.sha256
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target\release\feverfall_game.exe
+            target\release\feverfall_game.exe.sha256
+          generate_release_notes: true
