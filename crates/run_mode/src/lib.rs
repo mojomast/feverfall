@@ -4,9 +4,10 @@ use content_schema::{
 };
 use feedback_events::{FeedbackEvent, FeedbackKind};
 use game_rules::GameEvent;
-use serde::{Deserialize, Serialize};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 pub const META_SAVE_PATH: &str = "saves/roguelite/meta.json";
+pub const META_PROGRESSION_SAVE_VERSION: u32 = 1;
 
 pub const ROGUELITE_SAVE_DIR: &str = "saves/roguelite/";
 pub const ROGUELITE_BALANCE_DIR: &str = "content/balance/roguelite/";
@@ -628,7 +629,7 @@ fn run_node(act: u8, index: u8, kind: RunNodeKind, board: Option<String>) -> Run
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MetaProgressionSave {
     pub total_runs: u64,
     pub total_oranges_cleared: u64,
@@ -639,13 +640,130 @@ pub struct MetaProgressionSave {
     pub mastery_records: Vec<String>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+struct MetaProgressionSaveV1 {
+    version: u32,
+    total_runs: u64,
+    total_oranges_cleared: u64,
+    #[serde(default)]
+    relics_seen: Vec<RelicId>,
+    #[serde(default = "default_unlocked_starter_balls")]
+    unlocked_starter_balls: Vec<BallId>,
+    #[serde(default)]
+    unlocked_starting_relics: Vec<RelicId>,
+    #[serde(default)]
+    unlocked_board_archetype_weights: Vec<ContentId>,
+    #[serde(default)]
+    mastery_records: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct MetaProgressionSaveV0 {
+    total_runs: u64,
+    total_oranges_cleared: u64,
+    #[serde(default)]
+    relics_seen: Vec<RelicId>,
+    #[serde(default = "default_unlocked_starter_balls")]
+    unlocked_starter_balls: Vec<BallId>,
+    #[serde(default)]
+    unlocked_starting_relics: Vec<RelicId>,
+    #[serde(default)]
+    unlocked_board_archetype_weights: Vec<ContentId>,
+    #[serde(default)]
+    mastery_records: Vec<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum MetaProgressionSaveWire {
+    V1(MetaProgressionSaveV1),
+    V0(MetaProgressionSaveV0),
+}
+
+fn default_unlocked_starter_balls() -> Vec<BallId> {
+    vec![BallId::new("balls/act1/basic_orb").expect("static id is valid")]
+}
+
+impl From<MetaProgressionSave> for MetaProgressionSaveV1 {
+    fn from(save: MetaProgressionSave) -> Self {
+        Self {
+            version: META_PROGRESSION_SAVE_VERSION,
+            total_runs: save.total_runs,
+            total_oranges_cleared: save.total_oranges_cleared,
+            relics_seen: save.relics_seen,
+            unlocked_starter_balls: save.unlocked_starter_balls,
+            unlocked_starting_relics: save.unlocked_starting_relics,
+            unlocked_board_archetype_weights: save.unlocked_board_archetype_weights,
+            mastery_records: save.mastery_records,
+        }
+    }
+}
+
+impl From<MetaProgressionSaveV0> for MetaProgressionSave {
+    fn from(save: MetaProgressionSaveV0) -> Self {
+        Self {
+            total_runs: save.total_runs,
+            total_oranges_cleared: save.total_oranges_cleared,
+            relics_seen: save.relics_seen,
+            unlocked_starter_balls: save.unlocked_starter_balls,
+            unlocked_starting_relics: save.unlocked_starting_relics,
+            unlocked_board_archetype_weights: save.unlocked_board_archetype_weights,
+            mastery_records: save.mastery_records,
+        }
+    }
+}
+
+impl From<MetaProgressionSaveV1> for MetaProgressionSave {
+    fn from(save: MetaProgressionSaveV1) -> Self {
+        Self {
+            total_runs: save.total_runs,
+            total_oranges_cleared: save.total_oranges_cleared,
+            relics_seen: save.relics_seen,
+            unlocked_starter_balls: save.unlocked_starter_balls,
+            unlocked_starting_relics: save.unlocked_starting_relics,
+            unlocked_board_archetype_weights: save.unlocked_board_archetype_weights,
+            mastery_records: save.mastery_records,
+        }
+    }
+}
+
+impl Serialize for MetaProgressionSave {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        MetaProgressionSaveV1::from(self.clone()).serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for MetaProgressionSave {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        match MetaProgressionSaveWire::deserialize(deserializer)? {
+            MetaProgressionSaveWire::V1(save) => {
+                if save.version > META_PROGRESSION_SAVE_VERSION {
+                    return Err(de::Error::custom(format!(
+                        "unknown roguelite meta save version {}",
+                        save.version
+                    )));
+                }
+                Ok(save.into())
+            }
+            MetaProgressionSaveWire::V0(save) => Ok(save.into()),
+        }
+    }
+}
+
 impl Default for MetaProgressionSave {
     fn default() -> Self {
         Self {
             total_runs: 0,
             total_oranges_cleared: 0,
             relics_seen: Vec::new(),
-            unlocked_starter_balls: vec![BallId::new("balls/act1/basic_orb").unwrap()],
+            unlocked_starter_balls: default_unlocked_starter_balls(),
             unlocked_starting_relics: Vec::new(),
             unlocked_board_archetype_weights: Vec::new(),
             mastery_records: Vec::new(),
@@ -654,6 +772,8 @@ impl Default for MetaProgressionSave {
 }
 
 impl MetaProgressionSave {
+    pub const CURRENT_VERSION: u32 = META_PROGRESSION_SAVE_VERSION;
+
     pub fn record_run_end(&mut self, oranges_cleared: u64, relics: &[RelicInstance]) {
         self.total_runs += 1;
         self.total_oranges_cleared += oranges_cleared;
@@ -1156,6 +1276,123 @@ mod tests {
         assert!(matches!(offers[0], MetaUnlock::StarterBall(_)));
         assert!(matches!(offers[1], MetaUnlock::StartingRelic(_)));
         assert!(matches!(offers[2], MetaUnlock::BoardArchetypeWeight(_)));
+    }
+
+    #[test]
+    fn legacy_meta_save_without_version_loads() {
+        let json = r#"{
+            "total_runs": 7,
+            "total_oranges_cleared": 123,
+            "relics_seen": ["relics/act1/wide_cup_rim"],
+            "unlocked_starter_balls": ["balls/act1/basic_orb"],
+            "unlocked_starting_relics": ["relics/act1/wide_cup_rim"],
+            "unlocked_board_archetype_weights": ["archetypes/act2/lanes_plus"],
+            "mastery_records": ["Full Fever Cleared"]
+        }"#;
+
+        let save: MetaProgressionSave = serde_json::from_str(json).unwrap();
+
+        assert_eq!(save.total_runs, 7);
+        assert_eq!(save.total_oranges_cleared, 123);
+        assert_eq!(
+            save.relics_seen,
+            vec![RelicId::new("relics/act1/wide_cup_rim").unwrap()]
+        );
+        assert_eq!(
+            save.unlocked_starter_balls,
+            default_unlocked_starter_balls()
+        );
+        assert_eq!(
+            save.unlocked_starting_relics,
+            vec![RelicId::new("relics/act1/wide_cup_rim").unwrap()]
+        );
+        assert_eq!(
+            save.unlocked_board_archetype_weights,
+            vec![ContentId::new("archetypes/act2/lanes_plus").unwrap()]
+        );
+        assert_eq!(save.mastery_records, vec![FULL_FEVER_CLEARED_RECORD]);
+    }
+
+    #[test]
+    fn legacy_meta_save_missing_starter_balls_defaults_basic_orb() {
+        let json = r#"{
+            "total_runs": 1,
+            "total_oranges_cleared": 4,
+            "relics_seen": []
+        }"#;
+
+        let save: MetaProgressionSave = serde_json::from_str(json).unwrap();
+
+        assert_eq!(
+            save.unlocked_starter_balls,
+            default_unlocked_starter_balls()
+        );
+    }
+
+    #[test]
+    fn current_meta_save_writes_version_one() {
+        let json = serde_json::to_value(MetaProgressionSave::default()).unwrap();
+
+        assert_eq!(json["version"], MetaProgressionSave::CURRENT_VERSION);
+    }
+
+    #[test]
+    fn current_meta_save_round_trips() {
+        let mut save = MetaProgressionSave {
+            total_runs: 3,
+            total_oranges_cleared: 99,
+            ..MetaProgressionSave::default()
+        };
+        save.relics_seen
+            .push(RelicId::new("relics/act1/wide_cup_rim").unwrap());
+        save.unlocked_starter_balls
+            .push(BallId::new("balls/act1/rubber_orb").unwrap());
+        save.unlocked_starting_relics
+            .push(RelicId::new("relics/act1/rim_ricochet").unwrap());
+        save.unlocked_board_archetype_weights
+            .push(ContentId::new("archetypes/act2/lanes_plus").unwrap());
+        save.record_full_fever_cleared();
+
+        let json = serde_json::to_string(&save).unwrap();
+        let parsed: MetaProgressionSave = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(parsed, save);
+    }
+
+    #[test]
+    fn unknown_meta_save_version_errors() {
+        let json = r#"{
+            "version": 99,
+            "total_runs": 1,
+            "total_oranges_cleared": 2,
+            "relics_seen": [],
+            "unlocked_starter_balls": ["balls/act1/basic_orb"],
+            "unlocked_starting_relics": [],
+            "unlocked_board_archetype_weights": [],
+            "mastery_records": []
+        }"#;
+
+        let error = serde_json::from_str::<MetaProgressionSave>(json).unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("unknown roguelite meta save version 99"));
+    }
+
+    #[test]
+    fn missing_optional_meta_arrays_default_empty() {
+        let json = r#"{
+            "total_runs": 2,
+            "total_oranges_cleared": 8,
+            "relics_seen": [],
+            "unlocked_starter_balls": ["balls/act1/basic_orb"]
+        }"#;
+
+        let save: MetaProgressionSave = serde_json::from_str(json).unwrap();
+
+        assert!(save.unlocked_starting_relics.is_empty());
+        assert!(save.unlocked_board_archetype_weights.is_empty());
+        assert!(save.mastery_records.is_empty());
     }
 
     #[test]

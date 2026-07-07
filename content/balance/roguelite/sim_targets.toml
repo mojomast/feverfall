@@ -1,0 +1,55 @@
+id = "balance/roguelite/sim_targets"
+version = "c5-roguelite-rebalance-2026-07-07"
+
+[run_shape]
+acts = 3
+default_runs = 1000
+seed_start = 4925812092439265280 # 0x445d000000000000; TOML integers are signed i64
+
+[[cohorts]]
+id = "random_bot"
+aim_model = "random"
+bucket_awareness = false
+orange_targeting = false
+meta_progression = false
+full_run_win_min = 0.00
+full_run_win_max = 0.02
+
+[[cohorts]]
+id = "center_bias"
+aim_model = "center_bias"
+bucket_awareness = false
+orange_targeting = false
+meta_progression = false
+full_run_win_min = 0.03
+full_run_win_max = 0.08
+
+[[cohorts]]
+id = "orange_targeting_no_meta"
+aim_model = "orange_targeting"
+bucket_awareness = false
+orange_targeting = true
+meta_progression = false
+act1_clear_min = 0.25
+act1_clear_max = 0.35
+full_run_win_min = 0.10
+full_run_win_max = 0.20
+
+[[cohorts]]
+id = "bucket_aware_base"
+aim_model = "bucket_aware"
+bucket_awareness = true
+orange_targeting = true
+meta_progression = false
+full_run_win_min = 0.40
+full_run_win_max = 0.60
+
+[[cohorts]]
+id = "new_human_playtest"
+aim_model = "human_playtest"
+bucket_awareness = true
+orange_targeting = true
+meta_progression = false
+act1_clear_min = 0.45
+act1_clear_max = 0.65
+measured_by = "playtest_only"

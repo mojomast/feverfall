@@ -1,17 +1,26 @@
-name: Windows Release Build
+name: Release Builds
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_release:
+        description: "Attach artifacts to a GitHub Release when the ref is a v* tag"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
   push:
     tags:
       - "v*"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
-    name: Build Windows executable
+  build-windows:
+    name: Build Windows x86_64
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,31 +32,98 @@ jobs:
       - name: Build release executable
         run: cargo build -p feverfall_game --release
 
+      - name: Package Windows executable
+        shell: pwsh
+        run: Compress-Archive -Path target\release\feverfall_game.exe -DestinationPath target\release\feverfall_game-windows-x86_64.zip
+
       - name: Compute SHA-256 checksum
         shell: pwsh
         run: |
-          $hash = (Get-FileHash target\release\feverfall_game.exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  feverfall_game.exe" | Set-Content target\release\feverfall_game.exe.sha256
+          $hash = (Get-FileHash target\release\feverfall_game-windows-x86_64.zip -Algorithm SHA256).Hash.ToLower()
+          "$hash  feverfall_game-windows-x86_64.zip" | Set-Content target\release\feverfall_game-windows-x86_64.zip.sha256
 
-      - name: Upload Windows executable artifact
+      - name: Upload Windows release artifact
         uses: actions/upload-artifact@v4
         with:
           name: feverfall_game-windows-x86_64
-          path: target\release\feverfall_game.exe
+          path: target\release\feverfall_game-windows-x86_64.zip
           if-no-files-found: error
 
       - name: Upload SHA-256 checksum artifact
         uses: actions/upload-artifact@v4
         with:
           name: feverfall_game-windows-x86_64-sha256
-          path: target\release\feverfall_game.exe.sha256
+          path: target\release\feverfall_game-windows-x86_64.zip.sha256
           if-no-files-found: error
 
+  build-macos:
+    name: Build macOS ${{ matrix.target.label }}
+    runs-on: ${{ matrix.target.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - label: arm64
+            runner: macos-15
+            archive: feverfall_game-macos-arm64.tar.gz
+          - label: x86_64
+            runner: macos-15-intel
+            archive: feverfall_game-macos-x86_64.tar.gz
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.95.0
+
+      - name: Full release smoke gate
+        run: cargo run -p feverfall_game -- --smoke-full
+
+      - name: Build release executable
+        run: cargo build -p feverfall_game --release
+
+      - name: Package macOS executable
+        run: tar -C target/release -czf "target/release/${{ matrix.target.archive }}" feverfall_game
+
+      - name: Compute SHA-256 checksum
+        run: shasum -a 256 "target/release/${{ matrix.target.archive }}" > "target/release/${{ matrix.target.archive }}.sha256"
+
+      - name: Upload macOS release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feverfall_game-macos-${{ matrix.target.label }}
+          path: target/release/${{ matrix.target.archive }}
+          if-no-files-found: error
+
+      - name: Upload SHA-256 checksum artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: feverfall_game-macos-${{ matrix.target.label }}-sha256
+          path: target/release/${{ matrix.target.archive }}.sha256
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub Release
+    needs:
+      - build-windows
+      - build-macos
+    if: startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.upload_release == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Generate git-cliff release notes
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --current --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            target\release\feverfall_game.exe
-            target\release\feverfall_game.exe.sha256
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
+          files: dist/*

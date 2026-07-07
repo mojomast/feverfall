@@ -1,0 +1,5 @@
+SIL OPEN FONT LICENSE Version 1.1 - 26 February 2007
+
+This license is included to document the accepted license for future bundled
+fonts. Checkpoint 5 does not bundle a third-party font binary; Bevy's default
+font path is used for smoke rendering.

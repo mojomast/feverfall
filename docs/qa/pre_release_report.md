@@ -1,10 +1,26 @@
 # Pre-Release QA Report
 
-Date: 2026-07-04
+Date: 2026-07-07
 
-Agent: `[C4-QA] Full QA Pass Agent`, reconciled by `[C4-INTEGRATE]`.
+Agent: `[C4-QA] Full QA Pass Agent`, reconciled by `[C4-INTEGRATE]` and `[C5-INTEGRATE]`.
 
-Status: Checkpoint 4 feature-complete automation passes. Human feel/comprehension benchmarks and Windows artifact verification remain release-process gaps, not feature-complete blockers.
+Status: Checkpoint 5 alpha-candidate automation passes locally on Linux. Human feel/comprehension benchmarks, GitHub-hosted release dry-run artifact verification, code signing/notarization, and web builds remain post-C5 release-process gaps.
+
+## Checkpoint 5 Integration Addendum
+
+`[C5-INTEGRATE]` reconciled the completed C5 agents by refreshing the root lockfile for physics proptest coverage, wiring `balance_sim` to both C5 roguelite and RPG simulator modules, adding missing RPG balance-table IDs required by `content_linter`, and fixing strict-clippy fallout from completed agents.
+
+| Command | Result | Evidence |
+|---|---|---|
+| `cargo fmt --all -- --check` | Pass | No formatting diff after final integration. |
+| `cargo clippy --workspace --all-targets -- -D warnings` | Pass | Strict clippy completed after integration fixes in balance sim and save-migration tests. |
+| `cargo test --workspace` | Pass | Workspace tests passed, including 21 `physics_core` tests with C5 proptest invariants and 11 `balance_sim` tests. |
+| `cargo run -p feverfall_game -- --smoke-full` | Pass | `smoke-full summary: PASS checks=12 replays=7`. |
+| `cargo run -p content_linter` | Pass | `content lint passed: 246 unique id(s)`. |
+| `cargo run -p board_validator` | Pass | All 80 authored boards emitted `PASS`. |
+| `cargo run -p replay_runner` | Pass | Default minimal replay hash matched `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`. |
+| `cargo run -p balance_sim -- --smoke` | Pass | Emitted deterministic roguelite JSON for 4 bot/heuristic cohorts and RPG JSON for 7 cohorts. |
+| `actionlint .github/workflows/*.yml` | Not run | `actionlint` is not installed in this Linux environment; follow `docs/release.md` manual GitHub Actions dry-run for release workflow validation. |
 
 ## Validation Commands
 
@@ -75,21 +91,21 @@ Evidence:
 | Board clear payoff | 80% exciting/not annoying | Proxy pass via `extreme_fever` and accessibility caps; human survey required for annoyance. |
 | Feedback clarity | 90% distinguish win/near miss/loss | Proxy pass via distinct trigger list and audio/VFX tests; human survey required. |
 | Act 1 completion | 45-65% new players after tutorial | Not measured; current smoke is scripted, not a player cohort. |
-| Full-run win rate | 10-20% before meta unlocks | Not measured in this QA pass. |
+| Full-run win rate | 10-20% before meta unlocks | C5 balance smoke now emits deterministic roguelite cohort metrics; long-running/manual cohorts still required before release tuning sign-off. |
 | Distinct build identity | Players name relic/ball combo | Not measured; human survey required. |
 | Bad-seed reports | <1% runs | Proxy pass for authored validation; player reporting not available. |
 | Campaign board replay | 30%+ replay for mastery medals | Not measured; telemetry cohort required. |
 | Skill usage | Active skills used in 70%+ eligible boards | Proxy pass in smoke for two skill events; cohort target not measured. |
 | Gear readability | 80% explain item changed | Not measured; human survey required. |
-| Stat dominance | No stat line improves win >20% alone | Not measured; balance simulation required. |
+| Stat dominance | No stat line improves win >20% alone | C5 RPG balance smoke reports stat-dominance shares and no outlier flags in deterministic cohorts; real-player confirmation still required. |
 
 ## Known Gaps
 
 - [P1] Human feel survey remains required for comprehension, unfairness, one-more-shot desire, bucket satisfaction, payoff annoyance, and feedback clarity percentages.
 - [P1] Sim performance benchmark is not automated; add a timing harness for 120 Hz normal-board frame cost.
-- [P1] Roguelite/RPG cohort benchmarks are not measured by smoke tests; add batch simulations or telemetry analysis for win rate, replay rate, skill usage, gear readability, and stat dominance.
+- [P1] Roguelite/RPG cohort smoke metrics now exist through `balance_sim`; long-running balance cohorts and real-player telemetry are still needed for final win-rate/replay-rate/gear-readability confidence.
 - [P2] Full C4 content landed concurrently during QA; reports are re-runnable and reflect the current 242-ID/80-board content pack.
-- [P2] Checkpoint 4 Windows artifact workflow must be rerun from a pushed C4 ref; local Linux validation cannot verify the nonlocal artifact.
+- [P2] Release workflow dry-run must be run from GitHub Actions per `docs/release.md`; local Linux validation cannot verify Windows/macOS artifacts or checksums.
 
 ## Remaining TODO
 
@@ -97,7 +113,7 @@ Evidence:
 - [P1] Add performance timing output for normal-board simulation and feedback latency.
 - [P1] Re-run this QA suite after any post-C4 gameplay/content changes or golden replay additions.
 - [P2] Decide whether `saves/` generated by smoke should be ignored or cleaned from the working tree before release commits.
-- [P2] Trigger `.github/workflows/windows-feel-test.yml` from a pushed C4 ref and record artifact/checksum details in release notes.
+- [P2] Trigger the release-build workflow dry-run with `upload_release=false` and record Windows/macOS artifact/checksum details in release notes.
 
 ## Commit Status
 

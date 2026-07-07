@@ -1,0 +1,30 @@
+id = "balance/rpg/progression"
+version = "c5-rpg-balance-2026-07-07"
+
+[xp_curve]
+level_1 = 0
+level_2 = 200
+level_3 = 500
+level_4 = 900
+level_5 = 1400
+
+[chapter_targets]
+chapter_1_boards = 5
+chapter_2_boards = 12
+chapter_3_boards = 15
+chapter_4_boards = 15
+chapter_5_boards = 4
+
+[gear_timing]
+starter = 1
+balanced = 6
+synergy = 18
+optimized = 30
+normalized = 48
+
+[stat_weights]
+aim = 1.00
+control = 0.92
+resonance = 0.86
+luck = 0.74
+dominance_outlier_ratio = 0.45

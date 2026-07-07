@@ -1,5 +1,41 @@
 # Handoff
-## Completed: C4-INTEGRATE Checkpoint 4 final integration and feature-complete validation
-## Next Task: None queued; Checkpoint 4 is FEATURE COMPLETE
-## Context: Final C4 docs/state/contract reconciliation is complete. Validation passed locally: `cargo fmt --all -- --check`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo run -p feverfall_game -- --smoke-full`, `cargo run -p content_linter`, `cargo run -p board_validator`, default `cargo run -p replay_runner`, and the all-golden replay loop. Final counts: 242 unique content IDs and 80 authored boards. Final smoke hashes: C2 `18202124e6b686d8`, RPG Chapter 1 `3364e243ba2065f4`, RPG campaign `04029810211125c5`, roguelite Act 1-3 `e72374145338c3b3`, roguelite Acts 1-4 `152fc850303d8356`, feel-test replay `e70c8f293c5c5db192ef4620c03cb7e7000dc30433a0aab12f25e1706263a384`. Golden replay hashes remain: minimal `f9de2e888670d1d7da3e7e65db54c53e4217f059d375e9f17b7f36dfb9e49031`, vertical slice `39a27a4d0e60d29262c33894837dd1434814aa9252e23309fe87c55f7d5ac383`, Act 1 two-board `1d1a7485925e15c4a1a917ebcda582188df1748b1030ce9669887df224408455`, RPG defensive `8e566217ee6cddee3be784b3e359b3eda5708638ac8540bce759086e922a145f`, RPG implementation `fc72b1144ad88e62bb27c3a1296cbb9b3fa51871a852b9b5ef561d7146033a58`, roguelite defensive `89c224a1ba8aae30965fa42f9547940036badc026b0a2f1bf50e6de15b86682b`, roguelite implementation `c5db0fb8d90e57c8be159bbb779c56ead19148f36de8bdc077711e59f9a4a36a`. Remaining gaps are documented release-process/QA gaps: rerun Windows workflow from a pushed C4 ref, human feel/comprehension survey, sim performance timing, and cohort/balance metrics.
-## Files Modified: ORCHESTRATOR_STATE.md, docs/devplan/checkpoint_status.md, docs/technical/shared_contracts.md, docs/qa/pre_release_report.md, README.md, handoff.md
+
+## Completed: C5-INTEGRATE Checkpoint 5 Integration & Validation
+
+## Files changed
+- `Cargo.lock`: refreshed root lockfile after C5-FUZZ `proptest` additions.
+- `tools/balance_sim/src/main.rs`: replaced legacy hardcoded runner with CLI dispatch for `all`, `roguelite`, and `rpg`; `--smoke`, `--runs`, and `--seed` are supported.
+- `tools/balance_sim/src/roguelite.rs`: minimal integration fixes for current `PegDef` shape API and strict clippy.
+- `crates/run_mode/src/lib.rs`: minimal strict-clippy cleanup in C5 save-migration test.
+- `content/balance/rpg/{cohorts,content_coverage,progression}.toml`: added top-level IDs/versions so `content_linter` passes.
+- `docs/agent/05_checkpoint5_devplan.MD`: marked C5-FUZZ and C5-INTEGRATE complete for status consistency.
+- `ORCHESTRATOR_STATE.md`: updated C5 completion/alpha-candidate status, validation summary, counts, and next action.
+- `docs/qa/pre_release_report.md`: added C5 integration addendum and updated known gaps.
+
+## Validation run
+- `cargo fmt --all -- --check` — pass.
+- `cargo clippy --workspace --all-targets -- -D warnings` — pass.
+- `cargo test --workspace` — pass.
+- `cargo run -p feverfall_game -- --smoke-full` — pass: `smoke-full summary: PASS checks=12 replays=7`.
+- `cargo run -p content_linter` — pass: `246 unique id(s)`.
+- `cargo run -p board_validator` — pass: all 80 authored boards passed.
+- `cargo run -p replay_runner` — pass: default minimal replay hash matched.
+- `cargo run -p balance_sim -- --smoke` — pass: emitted roguelite and RPG deterministic JSON metrics.
+- `actionlint .github/workflows/*.yml` — not run: `actionlint` is not installed locally; use the documented GitHub Actions manual release dry-run.
+
+## Docs updated
+- `ORCHESTRATOR_STATE.md`
+- `docs/qa/pre_release_report.md`
+- `docs/agent/05_checkpoint5_devplan.MD`
+
+## Blockers
+- None for local C5 completion.
+- Nonlocal release workflow dry-run/artifact verification still needs GitHub Actions manual dispatch per `docs/release.md`.
+
+## Follow-up risks
+- C5 balance smoke is deterministic and useful for regression gating, but release tuning still needs longer cohorts and human playtest telemetry.
+- Release workflows were not validated with `actionlint` locally because it is unavailable in this environment.
+- Existing post-C5 gaps remain: human feel/comprehension benchmarks, code signing/notarization, web builds, and longer fuzz campaigns.
+
+## Next orchestrator prompt
+Checkpoint 5 is complete locally and the repo is at alpha-candidate status. Resume by either: (1) running the GitHub Actions release dry-run from `docs/release.md` with `upload_release=false` and recording Windows/macOS artifact checksums, or (2) planning C6/release-readiness work for human playtest benchmarks, code signing/notarization, web builds, long-running balance/fuzz campaigns, and final release polish. Start by reading `handoff.md`, `ORCHESTRATOR_STATE.md`, `docs/qa/pre_release_report.md`, and current git status.

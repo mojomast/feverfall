@@ -7,6 +7,7 @@ pub mod node_map_ui;
 pub mod render;
 pub mod reward_ui;
 pub mod run_summary_ui;
+pub mod screens;
 pub mod ui;
 pub mod vfx;
 

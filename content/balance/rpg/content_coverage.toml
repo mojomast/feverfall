@@ -1,0 +1,23 @@
+id = "balance/rpg/content_coverage"
+version = "c5-rpg-balance-2026-07-07"
+
+gear = [
+  "gear/rpg_ch1/starter_launcher",
+  "gear/rpg_ch1/bankshot_launcher",
+  "gear/rpg_ch1/basic_core",
+  "gear/rpg_ch1/magnet_core",
+]
+
+skills = [
+  "skills/rpg_ch1/zen_reroute",
+  "skills/rpg_ch1/catch_magnet",
+]
+
+chapters = [1, 2, 3, 4, 5]
+
+[boards]
+chapter_1 = 5
+chapter_2 = 12
+chapter_3 = 15
+chapter_4 = 15
+chapter_5 = 4

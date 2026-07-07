@@ -2,7 +2,7 @@
 
 ## Current Checkpoint
 
-STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 subagents completed, artifacts produced, final integration reconciled, and the Checkpoint 4 feature-complete exit criteria pass locally. Windows artifact production still requires rerunning the workflow from a pushed C4 ref; this is a release-process gap, not a feature-complete blocker.
+STATUS: ALPHA CANDIDATE / CHECKPOINT 5 COMPLETE. All C5 subagents completed and final integration reconciled cargo lock/dependencies, balance-sim CLI wiring, content-lint IDs for RPG balance tables, strict clippy fallout, and final QA state. Local Linux validation passes for the full C5 gate. Release workflow dry-run remains a nonlocal GitHub Actions/manual-dispatch validation item because `actionlint` is not installed in this environment.
 
 ## Completed Since Last Session
 
@@ -57,6 +57,15 @@ STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 suba
 - [C4-UI] Added production-placeholder UI screen models for main menu, settings, roguelite map/shop/forge/event/relic bar, RPG chapter/gear/skill/campaign screens, keyboard focus contracts, 1280x720/1920x1080 layout smoke coverage, and F3 debug overlay fields.
 - [C4-QA] Completed the automated pre-release QA pass: feel-test proxy survey, all-golden replay audit, content/board audit, telemetry immutability test, pre-release report, workspace validation, and smoke hash reconciliation.
 - [C4-INTEGRATE] Reconciled concurrent C4 docs/state/contract changes, reran the feature-complete exit gate, confirmed 242 unique content IDs and 80 authored boards, updated final status docs, and prepared the final C4 reconciliation commit.
+- [C5-SAVE-MIGRATION] Added versioned `MetaProgressionSave` loading/saving with v0 migration, current v1 output, unknown-version rejection, tests, and docs.
+- [C5-FUZZ] Added isolated physics fuzz/property coverage; proptest invariants now run under normal workspace tests and root `Cargo.lock` includes the required proptest dependency graph.
+- [C5-RPG-BALANCE] Added RPG balance tables and deterministic RPG cohort metrics.
+- [C5-ROGUELITE-REBALANCE] Reworked roguelite balance simulation around current TOML tables and separated bot/heuristic cohorts.
+- [C5-CI] Added release/coverage workflow expansion, release docs, issue/PR templates, changelog config, and dry-run instructions.
+- [C5-REPO-HEALTH] Updated public README/contributing/changelog path and relocated agent scaffolding under `docs/agent/`.
+- [C5-RENDER] Added real Bevy screen rendering systems and tracked sprite/font assets with provenance docs.
+- [C5-AUDIO] Added runtime audio bus/channel mapping, CC0 fallback WAV assets, accessibility gates, and audio contract docs.
+- [C5-INTEGRATE] Wired `balance_sim` CLI to both C5 roguelite and RPG simulators, fixed minimal integration fallout, passed the full C5 local validation gate, and updated QA/state docs.
 
 ## Active Workstreams
 
@@ -64,7 +73,7 @@ STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 suba
 - Checkpoint 2 Core Loop: deterministic vertical-slice smoke session passing through physics, game rules, node progression, reward selection, run state, RPG state, HUD, feedback, telemetry, run summary, and replay/run-summary hashes.
 - Content / Progression: Act 1 slice defaults, node path, reward offers, relic/ball/shop content, and boss board validation are available in shared contracts and content data.
 - UI / Feedback / Telemetry: node-map, reward, run-summary, slice summaries, and telemetry mappings pass automated validation; human interactive-flow confirmation is recorded.
-- Checkpoint gate: Checkpoint 4 COMPLETE / FEATURE COMPLETE. Human-only release benchmarks remain documented gaps, and Windows workflow artifact verification is pending from a pushed C4 ref.
+- Checkpoint gate: Checkpoint 5 COMPLETE / ALPHA CANDIDATE. Human-only benchmarks, code signing/notarization, web builds, and remote release workflow artifact verification remain documented post-C5 release-process gaps.
 - Checkpoint 3: COMPLETE. [C3-BALANCE], [C3-ROGUELITE], [C3-RPG], [C3-SEP], [C3-G], and [C3-INTEGRATE] complete with required validations passing.
 - [C4-CONTENT]: COMPLETE. Content linter, board validator, and touched crate tests pass with full C4 content quantity targets met.
 - [C4-RPG-CH2TO5]: COMPLETE. Default smoke prints RPG Ch1 board 1, Ch3 board 1, and Ch5 board 1 campaign summaries with hashes before the preserved Chapter 1 save/load smoke summary.
@@ -72,6 +81,7 @@ STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 suba
 - [C4-UI]: COMPLETE. Game tests, Bevy feel-test strict clippy, and Bevy feel-test smoke pass with `screens=13`, `keyboard=true`, `layout=true`, and `f3_fields=5` in registration smoke.
 - [C4-QA]: COMPLETE. Workspace tests, all golden replays, content linter, board validator, default smoke, feature smoke, and QA reports pass; human-only feel benchmarks remain explicitly marked as gaps.
 - [C4-INTEGRATE]: COMPLETE. Final formatting, workspace test, strict clippy, `--smoke-full`, content lint, board validation, and all-golden replay gates pass.
+- [C5-INTEGRATE]: COMPLETE. Final formatting, strict clippy, workspace tests, `--smoke-full`, content lint, board validation, replay runner, and balance sim smoke pass locally.
 - Tooling gate: CI/local validation includes default, vertical-slice, Act 1 two-board, RPG Chapter 1, and roguelite 3-act replay hash gates; content lint; board validation; roguelite/RPG seed-browser smokes; default/RPG/roguelite game smoke commands; and Bevy feel-test smoke/clippy gates.
 
 ## Subagents Dispatched
@@ -119,6 +129,7 @@ STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 suba
 - [C4-UI] Full UI Polish Agent: production-placeholder screen models, keyboard focus, layout smoke, F3 debug overlay, validation, and documentation updates.
 - [C4-QA] Full QA Pass Agent: automated pre-release QA reports, replay/content/telemetry audits, workspace validation, and smoke-hash reconciliation.
 - [C4-INTEGRATE] Final Checkpoint 4 Integration & Feature-Complete Validation Agent: final docs/state reconciliation, local exit-gate validation, feature-complete status update, and final commit.
+- [C5-INTEGRATE] Checkpoint 5 Integration & Validation Agent: final C5 cargo/balance/docs reconciliation, local exit-gate validation, and alpha-candidate status update.
 
 ## Files Changed
 
@@ -490,13 +501,22 @@ STATUS: FEATURE COMPLETE. Current checkpoint: Checkpoint 4 COMPLETE. All C4 suba
 
 ## Last Content / Board Counts
 
-- Content linter: `242` unique IDs.
+- Content linter: `246` unique IDs.
 - Board validator: `80` authored boards passed.
 
 ## Next Integration Target
 
-- None. Checkpoint 4 is FEATURE COMPLETE. Rerun the Windows workflow from a pushed C4 ref as a release-process follow-up.
+- None. Checkpoint 5 is COMPLETE / ALPHA CANDIDATE. Use GitHub Actions manual release dry-run from `docs/release.md` to verify nonlocal Windows/macOS artifacts and checksums.
 
 ## Next Parallel Dispatch
 
-- None unless a new release-process agent is dispatched for the Windows artifact workflow or post-C4 release packaging.
+- None unless dispatching a C6/release-process agent for GitHub Actions artifact dry-run, human playtest benchmarks, code signing/notarization, web builds, or longer balance/fuzz campaigns.
+
+## Checkpoint 5 Planning
+
+STATUS: COMPLETE.
+
+- Devplan: `05_checkpoint5_devplan.MD`
+- Resumption prompt: `05_checkpoint5_resumption_prompt.MD`
+- Planning scope: real Bevy rendering, audio integration, save migration, fuzz/property testing, RPG and roguelite balance simulation, CI/release expansion, and repository health documentation.
+- Next orchestrator action: C5 is complete. Resume with C6/release-readiness planning or run the nonlocal release workflow dry-run documented in `docs/release.md`.

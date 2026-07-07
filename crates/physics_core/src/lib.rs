@@ -891,6 +891,8 @@ fn is_finite_vec(a: Vec2) -> bool {
 mod tests {
     use super::*;
     use content_schema::{minimal_test_board, BasketDef, BoardId, ObstacleDef, PegDef};
+    use proptest::prelude::*;
+    use std::collections::BTreeSet;
 
     fn ball_id() -> BallId {
         BallId::new("balls/basic").unwrap()
@@ -1230,6 +1232,186 @@ mod tests {
             "e5e9b4f955205cde05b28df55c8e03a0016220091c14925def3261d8687fc9e2"
         );
         assert_eq!(a.summary.replay_hash.len(), 64);
+    }
+
+    fn finite_vec_strategy(
+        min_x: Scalar,
+        max_x: Scalar,
+        min_y: Scalar,
+        max_y: Scalar,
+    ) -> impl Strategy<Value = Vec2> {
+        (min_x..max_x, min_y..max_y).prop_map(|(x, y)| Vec2::new(x, y))
+    }
+
+    fn peg_kind_strategy() -> impl Strategy<Value = PegKind> {
+        prop_oneof![
+            Just(PegKind::Blue),
+            Just(PegKind::Orange),
+            Just(PegKind::Purple),
+            Just(PegKind::Green),
+            Just(PegKind::Stone),
+            Just(PegKind::Ghost),
+            Just(PegKind::Bomb),
+            Just(PegKind::Splitter),
+        ]
+    }
+
+    fn obstacle_kind_strategy() -> impl Strategy<Value = ObstacleKind> {
+        prop_oneof![
+            Just(ObstacleKind::Wall),
+            Just(ObstacleKind::Stone),
+            Just(ObstacleKind::Rubber),
+            Just(ObstacleKind::Sensor),
+        ]
+    }
+
+    fn shape_strategy() -> impl Strategy<Value = ShapeDef> {
+        prop_oneof![
+            (finite_vec_strategy(0.75, 19.25, 3.0, 30.0), 0.08..0.60)
+                .prop_map(|(center, radius)| ShapeDef::Circle { center, radius }),
+            (
+                finite_vec_strategy(0.75, 19.25, 3.0, 30.0),
+                finite_vec_strategy(0.75, 19.25, 3.0, 30.0),
+                0.05..0.35,
+            )
+                .prop_map(|(a, b, radius)| ShapeDef::Capsule { a, b, radius }),
+            (
+                finite_vec_strategy(0.75, 19.25, 3.0, 30.0),
+                finite_vec_strategy(0.75, 19.25, 3.0, 30.0),
+            )
+                .prop_map(|(a, b)| ShapeDef::Segment { a, b }),
+            (
+                finite_vec_strategy(0.75, 19.25, 3.0, 30.0),
+                finite_vec_strategy(0.10, 1.20, 0.10, 0.80),
+            )
+                .prop_map(|(center, half_extents)| ShapeDef::Rect {
+                    center,
+                    half_extents,
+                }),
+        ]
+    }
+
+    fn board_strategy() -> impl Strategy<Value = BoardDefinition> {
+        (
+            0.75..19.25,
+            1.5..18.5,
+            -6.0..6.0,
+            prop::collection::vec((peg_kind_strategy(), shape_strategy()), 0..16),
+            prop::collection::vec((obstacle_kind_strategy(), shape_strategy()), 0..8),
+        )
+            .prop_map(|(cannon_x, bucket_x, bucket_speed, pegs, obstacles)| {
+                BoardDefinition {
+                    id: BoardId::new("boards/proptest_physics").unwrap(),
+                    size: Vec2::new(20.0, 35.56),
+                    cannon_position: Vec2::new(cannon_x, 1.5),
+                    kill_plane_y: 36.5,
+                    pegs: pegs
+                        .into_iter()
+                        .enumerate()
+                        .map(|(idx, (kind, shape))| PegDef {
+                            id: PegId::new(format!("peg/proptest_{idx:02}")).unwrap(),
+                            kind,
+                            shape,
+                        })
+                        .collect(),
+                    obstacles: obstacles
+                        .into_iter()
+                        .enumerate()
+                        .map(|(idx, (kind, shape))| ObstacleDef {
+                            id: ObstacleId::new(format!("obstacles/proptest_{idx:02}")).unwrap(),
+                            kind,
+                            shape,
+                        })
+                        .collect(),
+                    bucket: BasketDef {
+                        center: Vec2::new(bucket_x, 34.4),
+                        width: 3.0,
+                        height: 0.55,
+                        horizontal_speed: bucket_speed,
+                        ..BasketDef::spec_default()
+                    },
+                    tags: Vec::new(),
+                    objectives: Vec::new(),
+                    boss_mechanic: None,
+                }
+            })
+    }
+
+    fn shot_strategy() -> impl Strategy<Value = ShotInput> {
+        (0.05..(std::f64::consts::PI - 0.05), 4.0..38.0).prop_map(|(angle, speed)| ShotInput {
+            aim_angle_radians: angle,
+            launch_speed: speed,
+            ball_id: ball_id(),
+        })
+    }
+
+    fn collision_signature(event: &PhysicsEvent) -> Option<(&'static str, String, Tick)> {
+        match event {
+            PhysicsEvent::BallHitPeg { peg, tick, .. } => {
+                Some(("peg", peg.as_str().to_owned(), *tick))
+            }
+            PhysicsEvent::BallHitObstacle { obstacle, tick, .. } => {
+                Some(("obstacle", obstacle.as_str().to_owned(), *tick))
+            }
+            _ => None,
+        }
+    }
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(64))]
+
+        #[test]
+        fn proptest_simulation_is_deterministic(board in board_strategy(), input in shot_strategy(), seed in any::<u64>()) {
+            let first = simulate_shot(seed, &board, &input);
+            let second = simulate_shot(seed, &board, &input);
+
+            prop_assert_eq!(first, second);
+        }
+
+        #[test]
+        fn proptest_shot_terminates_with_final_event(board in board_strategy(), input in shot_strategy(), seed in any::<u64>()) {
+            let result = simulate_shot(seed, &board, &input);
+            let ends_with_shot_ended = matches!(result.events.last(), Some(PhysicsEvent::ShotEnded { .. }));
+
+            prop_assert!(ends_with_shot_ended);
+            prop_assert!(result.summary.ticks <= MAX_TICKS_PER_SHOT);
+            prop_assert!(result.summary.caught_bucket || result.summary.exited_board);
+        }
+
+        #[test]
+        fn proptest_no_duplicate_pegs_hit(board in board_strategy(), input in shot_strategy(), seed in any::<u64>()) {
+            let result = simulate_shot(seed, &board, &input);
+            let mut seen = BTreeSet::new();
+
+            for peg in &result.summary.pegs_hit {
+                prop_assert!(seen.insert(peg.as_str().to_owned()), "duplicate peg in shot summary: {peg}");
+            }
+        }
+
+        #[test]
+        fn proptest_trajectory_samples_are_finite(board in board_strategy(), input in shot_strategy(), sample_every in 1_u64..60) {
+            let samples = sample_shot_trajectory(&board, &input, sample_every);
+
+            prop_assert!(!samples.is_empty());
+            prop_assert_eq!(samples.first().map(|sample| sample.tick), Some(0));
+            for sample in samples {
+                prop_assert!(sample.position.x.is_finite());
+                prop_assert!(sample.position.y.is_finite());
+            }
+        }
+
+        #[test]
+        fn proptest_first_bounce_matches_first_collision(board in board_strategy(), input in shot_strategy(), seed in any::<u64>()) {
+            let predicted = predict_first_bounce(&board, &input)
+                .as_ref()
+                .and_then(collision_signature);
+            let simulated = simulate_shot(seed, &board, &input)
+                .events
+                .iter()
+                .find_map(collision_signature);
+
+            prop_assert_eq!(predicted, simulated);
+        }
     }
 
     #[test]

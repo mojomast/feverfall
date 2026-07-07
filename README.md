@@ -1,40 +1,38 @@
-# Feverfall
+# FeverFall
 
-Feverfall is a deterministic Peggle-style ball-drop prototype with two progression modes: a roguelite run mode and a persistent RPG campaign mode. Checkpoint 4 is feature complete, with physics, board validation, replay hashing, content linting, RPG campaign coverage, roguelite Acts 1-4 smoke coverage, and placeholder UI/VFX/audio systems under automated gates.
+FeverFall is a deterministic Peggle-style ball-drop Rust prototype with two progression modes: roguelite runs and a persistent RPG campaign. Checkpoint 4 is feature complete; Checkpoint 5 is underway to turn the prototype into a playable alpha candidate with stronger presentation, persistence safety, balance measurement, release automation, and repository hygiene.
 
-## Current Status
+## Project Status
 
-- Physics core: deterministic fixed-step simulation, continuous collision handling, first-bounce prediction, bucket catches, replay hashes, trajectory sampling, and stress tests are implemented.
-- Roguelite: C2 vertical slice, C3 Acts 1-3 structure, C4 optional Act 4 final-seed smoke path, relic trigger coverage, meta progression skeleton, and replay fixtures are present.
-- RPG: Chapter 1 implementation smoke, C4 campaign catalog samples for Chapters 1, 3, and 5, mastery-mode unlock/normalized mastery contracts, gear/skills, save/load, and replay fixtures are present.
-- Content: authored boards, boss boards, C4 board packs, RPG boards, relics, balls, gear, skills, shops, and balance/content manifests are validated by `content_linter` and `board_validator`.
-- Runtime: default CLI smoke is non-interactive. The optional Bevy feel-test scene is feature-gated.
+- **Physics core:** deterministic fixed-step simulation, continuous collision handling, first-bounce prediction, bucket catches, replay hashes, trajectory sampling, and stress tests are implemented.
+- **Roguelite mode:** C2 vertical slice, Acts 1-4 smoke coverage, relic trigger coverage, meta progression skeleton, and replay fixtures are present.
+- **RPG mode:** Chapter 1 implementation smoke, Chapter 1/3/5 campaign smoke samples, mastery contracts, gear, skills, saves, and replay fixtures are present.
+- **Content:** boards, boss boards, RPG boards, relics, balls, gear, skills, shops, and manifests are validated by content and board tools.
+- **Runtime:** default CLI paths are non-interactive smoke gates. The optional Bevy feel-test scene is feature-gated and is the current local play path.
 
-## Build
+## Play Path
 
-Desktop smoke build:
+Run the default smoke path:
 
 ```bash
 cargo run -p feverfall_game -- --smoke
 ```
 
-Full release smoke gate:
-
-```bash
-cargo run -p feverfall_game -- --smoke-full
-```
-
-Playable Bevy feel-test desktop build:
+Run the current desktop feel-test path:
 
 ```bash
 cargo run -p feverfall_game --features bevy_feel_test -- --feel-test
 ```
 
-Web build status: no dedicated WebAssembly build pipeline is currently wired. Treat web as a known gap until a Bevy/WASM target, asset packaging, and browser smoke gate are added.
+Run the full game smoke gate:
 
-## Validation
+```bash
+cargo run -p feverfall_game -- --smoke-full
+```
 
-Run the full workspace gate before tagging a public build:
+`--smoke-full` runs C2 vertical-slice smoke, RPG Chapter 1 and campaign Chapter 1/3/5 smoke, roguelite Acts 1-4 smoke, feel-test smoke, content lint, board validation, and golden replay fixtures.
+
+## Developer Quick Start
 
 ```bash
 cargo fmt --all -- --check
@@ -43,18 +41,43 @@ cargo test --workspace
 cargo run -p feverfall_game -- --smoke-full
 ```
 
-`--smoke-full` runs C2 vertical-slice smoke, RPG Chapter 1 and campaign Chapter 1/3/5 smoke, roguelite Acts 1-4 smoke, feel-test smoke, full content lint, board validation, and every golden replay fixture.
+Useful validation tools:
 
-## Windows Release
+```bash
+cargo run -p content_linter
+cargo run -p board_validator
+cargo run -p replay_runner
+```
 
-A Windows executable is built automatically by GitHub Actions:
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for contribution expectations and [`CHANGELOG.md`](./CHANGELOG.md) for release notes.
 
-- **Workflow dispatch**: Go to **Actions > Windows Release Build > Run workflow** to build and upload an artifact.
-- **Tagged release**: Push a tag like `v0.1.0` and the workflow will create a GitHub Release with `feverfall_game.exe` and its SHA-256 checksum attached.
+## Workspace Layout
 
-The release build runs the full `--smoke-full` gate before producing the binary.
+- `crates/` — deterministic gameplay libraries: physics, rules, board generation, run mode, RPG mode, feedback events, telemetry, and content schema.
+- `game/` — `feverfall_game` binary and optional Bevy desktop feel-test integration.
+- `content/` — authored game data and balance/content manifests.
+- `tools/` — validation and support tools: replay runner, board validator, content linter, seed browser, and balance simulator.
+- `tests/` — workspace-level fixtures and validation inputs.
+- `docs/` — design, QA, technical, playtesting, and agent planning documentation.
+- `docs/agent/` — relocated autonomous-agent plans, prompts, and checkpoint scaffolding.
+
+## Release Process
+
+1. Run the developer quick-start gate and resolve failures.
+2. Run the full smoke gate with `cargo run -p feverfall_game -- --smoke-full`.
+3. Review [`CHANGELOG.md`](./CHANGELOG.md) and update `Unreleased` entries for player-facing, release-facing, or repository-facing changes.
+4. For Windows artifacts, use the existing GitHub Actions Windows release workflow by manual dispatch or by pushing a version tag such as `v0.1.0`.
+5. Attach generated artifacts and checksums to the release when the workflow succeeds.
+
+Release automation is still expanding during Checkpoint 5; macOS publishing, coverage baselines, and richer changelog automation are tracked by the C5 CI workstream.
 
 ## Known Gaps
 
-- Web build/release automation is not implemented.
-- Runtime visuals/audio remain placeholder systems until production assets are added.
+- Web/WASM build and release automation is not implemented.
+- Production rendering and audio are Checkpoint 5 workstreams; runtime presentation remains placeholder until those land.
+- Human feel/comprehension benchmarks, large balance cohorts, and long-running fuzz campaigns are not yet mandatory release gates.
+- Code signing/notarization is not configured for desktop releases.
+
+## License Status
+
+The Cargo workspace currently declares `UNLICENSED`, and this repository does not yet include a root `LICENSE` file. Treat all source, content, and assets as not licensed for redistribution until a project license and asset provenance policy are finalized.

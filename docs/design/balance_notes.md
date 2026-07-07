@@ -1,5 +1,27 @@
 # Roguelite Balance Notes
 
+## Checkpoint 5 Target Ranges
+
+`content/balance/roguelite/sim_targets.toml` records the simulation cohorts and target bands used by the roguelite balance sim:
+
+| Cohort | Measurement | Target |
+|---|---|---:|
+| Random bot | Full-run win rate | 0-2% |
+| Center-bias bot | Full-run win rate | 3-8% observational guardrail |
+| Basic heuristic, no meta (`orange_targeting_no_meta`) | Full-run win rate | 10-20% |
+| Basic heuristic, no meta (`orange_targeting_no_meta`) | Act 1 survival clear floor | 25-35% |
+| New human | Act 1 completion | 45-65%, measured by playtest only |
+| Experienced base difficulty (`bucket_aware_base`) | Full-run win rate | 40-60% |
+
+Checkpoint 5 separates **act survival clears** from **perfect act clears**. Survival clear means a run exits the act alive even after losing hearts on one or more failed boards; perfect clear means every board in that act was cleared without a failed-board heart loss.
+
+## Checkpoint 5 Simulation Implementation Notes
+
+- `tools/balance_sim/src/roguelite.rs` consumes `board_curve.toml`, `reward_pool.toml`, `scoring_curve.toml`, and `sim_targets.toml` rather than hardcoded run constants.
+- Cohorts are separated into random, center-bias, orange-targeting, and bucket-aware aim models. The `new_human_playtest` cohort is documented in TOML but skipped by headless sim because it must be measured by playtest.
+- The module mirrors runtime run/reward concepts and keeps reward categories aligned with `run_mode::Reward`; final integration can replace the local reward application shim with direct `RunState::apply_reward` wiring once `tools/balance_sim/src/main.rs` owns module dispatch.
+- JSON output includes cohort IDs, act-started counts, act survival clears, perfect act clears, board clears, shot counts, bucket catches, score free balls, and reward choice counts.
+
 ## Simulation Methodology
 
 - Agent: `[C3-BALANCE]`.

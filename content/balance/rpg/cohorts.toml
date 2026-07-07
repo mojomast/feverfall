@@ -1,0 +1,51 @@
+id = "balance/rpg/cohorts"
+version = "c5-rpg-balance-2026-07-07"
+
+[cohorts.on_curve]
+level_offset = 0
+skill_policy = "skill_aware"
+gear_archetype = "balanced"
+mastery_normalized = false
+retry_budget = 3
+
+[cohorts.underleveled]
+level_offset = -2
+skill_policy = "skill_aware"
+gear_archetype = "starter"
+mastery_normalized = false
+retry_budget = 4
+
+[cohorts.overleveled]
+level_offset = 2
+skill_policy = "skill_aware"
+gear_archetype = "optimized"
+mastery_normalized = false
+retry_budget = 2
+
+[cohorts.no_skill]
+level_offset = 0
+skill_policy = "none"
+gear_archetype = "balanced"
+mastery_normalized = false
+retry_budget = 3
+
+[cohorts.skill_aware]
+level_offset = 0
+skill_policy = "skill_aware"
+gear_archetype = "balanced"
+mastery_normalized = false
+retry_budget = 3
+
+[cohorts.gear_archetype]
+level_offset = 0
+skill_policy = "skill_aware"
+gear_archetype = "synergy"
+mastery_normalized = false
+retry_budget = 3
+
+[cohorts.normalized_mastery]
+level_offset = 0
+skill_policy = "skill_aware"
+gear_archetype = "normalized"
+mastery_normalized = true
+retry_budget = 5
