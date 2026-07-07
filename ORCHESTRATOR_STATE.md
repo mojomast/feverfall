@@ -520,3 +520,13 @@ STATUS: COMPLETE.
 - Resumption prompt: `05_checkpoint5_resumption_prompt.MD`
 - Planning scope: real Bevy rendering, audio integration, save migration, fuzz/property testing, RPG and roguelite balance simulation, CI/release expansion, and repository health documentation.
 - Next orchestrator action: C5 is complete. Resume with C6/release-readiness planning or run the nonlocal release workflow dry-run documented in `docs/release.md`.
+
+## Checkpoint 6 Planning
+
+Status: DEVPLAN COMPLETE
+
+Deliverables:
+- `06_checkpoint6_devplan.MD`
+- `06_checkpoint6_resumption_prompt.MD`
+
+Notes: Phase 0 reconnaissance and Phase 1 research handoffs were completed before synthesis. Implementation has not started; resume from C6 Round 1 unless later state marks Round 1 complete.
